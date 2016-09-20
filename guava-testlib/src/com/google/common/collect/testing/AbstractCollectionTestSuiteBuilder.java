@@ -16,6 +16,7 @@
 
 package com.google.common.collect.testing;
 
+import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.testing.testers.CollectionAddAllTester;
 import com.google.common.collect.testing.testers.CollectionAddTester;
 import com.google.common.collect.testing.testers.CollectionClearTester;
@@ -32,26 +33,25 @@ import com.google.common.collect.testing.testers.CollectionSerializationTester;
 import com.google.common.collect.testing.testers.CollectionSizeTester;
 import com.google.common.collect.testing.testers.CollectionToArrayTester;
 import com.google.common.collect.testing.testers.CollectionToStringTester;
-
-import junit.framework.TestSuite;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import junit.framework.TestSuite;
 
 /**
  * Abstract superclass of all test-suite builders for collection interfaces.
  *
  * @author George van den Driessche
  */
+@GwtIncompatible
 public abstract class AbstractCollectionTestSuiteBuilder<
-    B extends AbstractCollectionTestSuiteBuilder<B, E>, E>
-    extends PerCollectionSizeTestSuiteBuilder<
-        B, TestCollectionGenerator<E>, Collection<E>, E> {
+        B extends AbstractCollectionTestSuiteBuilder<B, E>, E>
+    extends PerCollectionSizeTestSuiteBuilder<B, TestCollectionGenerator<E>, Collection<E>, E> {
   // Class parameters must be raw.
   @SuppressWarnings("unchecked")
-  @Override protected List<Class<? extends AbstractTester>> getTesters() {
+  @Override
+  protected List<Class<? extends AbstractTester>> getTesters() {
     return Arrays.<Class<? extends AbstractTester>>asList(
         CollectionAddAllTester.class,
         CollectionAddTester.class,
@@ -68,13 +68,12 @@ public abstract class AbstractCollectionTestSuiteBuilder<
         CollectionSerializationTester.class,
         CollectionSizeTester.class,
         CollectionToArrayTester.class,
-        CollectionToStringTester.class
-    );
+        CollectionToStringTester.class);
   }
 
   @Override
-  protected List<TestSuite> createDerivedSuites(FeatureSpecificTestSuiteBuilder<
-      ?, ? extends OneSizeTestContainerGenerator<Collection<E>, E>>
+  protected List<TestSuite> createDerivedSuites(
+      FeatureSpecificTestSuiteBuilder<?, ? extends OneSizeTestContainerGenerator<Collection<E>, E>>
           parentBuilder) {
     DerivedIteratorTestSuiteBuilder<?> iteratorTestSuiteBuilder =
         new DerivedIteratorTestSuiteBuilder<E>()
@@ -82,7 +81,6 @@ public abstract class AbstractCollectionTestSuiteBuilder<
             .usingGenerator(parentBuilder.getSubjectGenerator())
             .withFeatures(parentBuilder.getFeatures());
 
-    return Collections.singletonList(
-        iteratorTestSuiteBuilder.createTestSuite());
+    return Collections.singletonList(iteratorTestSuiteBuilder.createTestSuite());
   }
 }

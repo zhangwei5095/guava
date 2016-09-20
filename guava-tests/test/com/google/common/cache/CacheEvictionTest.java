@@ -26,11 +26,9 @@ import com.google.common.cache.CacheTesting.Receiver;
 import com.google.common.cache.LocalCache.ReferenceEntry;
 import com.google.common.cache.TestingCacheLoaders.IdentityLoader;
 import com.google.common.cache.TestingRemovalListeners.CountingRemovalListener;
-
-import junit.framework.TestCase;
-
 import java.util.List;
 import java.util.Set;
+import junit.framework.TestCase;
 
 /**
  * Tests relating to cache eviction: what does and doesn't count toward maximumSize, what happens
@@ -411,7 +409,7 @@ public class CacheEvictionTest extends TestCase {
     assertThat(keySet).containsExactly(5, 6, 7, 8, 9, 10, 11, 12);
   }
 
-  private void getAll(LoadingCache<Integer, Integer> cache, List<Integer> keys) {
+  private static void getAll(LoadingCache<Integer, Integer> cache, List<Integer> keys) {
     for (int i : keys) {
       cache.getUnchecked(i);
     }

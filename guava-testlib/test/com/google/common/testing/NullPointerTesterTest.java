@@ -37,10 +37,6 @@ import com.google.common.collect.Table;
 import com.google.common.reflect.TypeToken;
 import com.google.common.testing.NullPointerTester.Visibility;
 import com.google.common.testing.anotherpackage.SomeClassThatDoesNotUseNullable;
-
-import junit.framework.AssertionFailedError;
-import junit.framework.TestCase;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -48,8 +44,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
-
 import javax.annotation.Nullable;
+import junit.framework.AssertionFailedError;
+import junit.framework.TestCase;
 
 /**
  * Unit test for {@link NullPointerTester}.
@@ -218,6 +215,32 @@ public class NullPointerTesterTest extends TestCase {
       }
       assertTrue("Should report error in method " + methodName, foundProblem);
     }
+  }
+
+  public void testMessageOtherException() throws Exception {
+    Method method = OneArg.class.getMethod("staticOneArgThrowsOtherThanNpe", String.class);
+    boolean foundProblem = false;
+    try {
+      new NullPointerTester().testMethodParameter(new OneArg(), method, 0);
+    } catch (AssertionFailedError expected) {
+      assertThat(expected.getMessage()).contains("index 0");
+      assertThat(expected.getMessage()).contains("[null]");
+      foundProblem = true;
+    }
+    assertTrue("Should report error when different exception is thrown", foundProblem);
+  }
+
+  public void testMessageNoException() throws Exception {
+    Method method = OneArg.class.getMethod("staticOneArgShouldThrowNpeButDoesnt", String.class);
+    boolean foundProblem = false;
+    try {
+      new NullPointerTester().testMethodParameter(new OneArg(), method, 0);
+    } catch (AssertionFailedError expected) {
+      assertThat(expected.getMessage()).contains("index 0");
+      assertThat(expected.getMessage()).contains("[null]");
+      foundProblem = true;
+    }
+    assertTrue("Should report error when no exception is thrown", foundProblem);
   }
 
   /**
@@ -902,7 +925,7 @@ public class NullPointerTesterTest extends TestCase {
     void check() {
       runTester();
       Object[] defaultArray = (Object[]) getDefaultParameterValue(0);
-      assertEquals(0, defaultArray.length);
+      assertThat(defaultArray).isEmpty();
     }
   }
 
@@ -921,7 +944,7 @@ public class NullPointerTesterTest extends TestCase {
     void check() {
       runTester();
       String[] defaultArray = (String[]) getDefaultParameterValue(0);
-      assertEquals(0, defaultArray.length);
+      assertThat(defaultArray).isEmpty();
     }
   }
 
@@ -961,7 +984,7 @@ public class NullPointerTesterTest extends TestCase {
     void check() {
       try {
         runTester();
-      } catch (AssertionError expected) {
+      } catch (AssertionFailedError expected) {
         return;
       }
       fail("Should have failed because enum has no constant");
@@ -1276,5 +1299,23 @@ public class NullPointerTesterTest extends TestCase {
 
   private static String rootLocaleFormat(String format, Object... args) {
     return String.format(Locale.ROOT, format, args);
+  }
+
+  static class OverridesEquals {
+    @Override
+    public boolean equals(Object o) {
+      return true;
+    }
+  }
+
+  static class DoesNotOverrideEquals {
+    public boolean equals(Object a, Object b) {
+      return true;
+    }
+  }
+
+  public void testEqualsMethod() {
+    shouldPass(new OverridesEquals());
+    shouldFail(new DoesNotOverrideEquals());
   }
 }

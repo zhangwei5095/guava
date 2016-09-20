@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -27,13 +26,13 @@ import java.util.Iterator;
 
 /**
  * Multiset implementation backed by an {@link EnumMap}.
- * 
+ *
  * <p>See the Guava User Guide article on <a href=
- * "http://code.google.com/p/guava-libraries/wiki/NewCollectionTypesExplained#Multiset">
+ * "https://github.com/google/guava/wiki/NewCollectionTypesExplained#multiset">
  * {@code Multiset}</a>.
  *
  * @author Jared Levy
- * @since 2.0 (imported from Google Collections Library)
+ * @since 2.0
  */
 @GwtCompatible(emulated = true)
 public final class EnumMultiset<E extends Enum<E>> extends AbstractMapBasedMultiset<E> {
@@ -58,12 +57,12 @@ public final class EnumMultiset<E extends Enum<E>> extends AbstractMapBasedMulti
     Iterables.addAll(multiset, elements);
     return multiset;
   }
-  
+
   /**
    * Returns a new {@code EnumMultiset} instance containing the given elements.  Unlike
    * {@link EnumMultiset#create(Iterable)}, this method does not produce an exception on an empty
    * iterable.
-   * 
+   *
    * @since 14.0
    */
   public static <E extends Enum<E>> EnumMultiset<E> create(Iterable<E> elements, Class<E> type) {
@@ -80,7 +79,7 @@ public final class EnumMultiset<E extends Enum<E>> extends AbstractMapBasedMulti
     this.type = type;
   }
 
-  @GwtIncompatible("java.io.ObjectOutputStream")
+  @GwtIncompatible // java.io.ObjectOutputStream
   private void writeObject(ObjectOutputStream stream) throws IOException {
     stream.defaultWriteObject();
     stream.writeObject(type);
@@ -92,7 +91,7 @@ public final class EnumMultiset<E extends Enum<E>> extends AbstractMapBasedMulti
    *             elements, the first element, its count, the second element, its
    *             count, and so on
    */
-  @GwtIncompatible("java.io.ObjectInputStream")
+  @GwtIncompatible // java.io.ObjectInputStream
   private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
     stream.defaultReadObject();
     @SuppressWarnings("unchecked") // reading data stored by writeObject
@@ -102,6 +101,6 @@ public final class EnumMultiset<E extends Enum<E>> extends AbstractMapBasedMulti
     Serialization.populateMultiset(this, stream);
   }
 
-  @GwtIncompatible("Not needed in emulated source")
+  @GwtIncompatible // Not needed in emulated source
   private static final long serialVersionUID = 0;
 }

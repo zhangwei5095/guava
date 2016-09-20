@@ -21,9 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.collect.testing.IteratorFeature;
 import com.google.common.collect.testing.IteratorTester;
 import com.google.common.testing.NullPointerTester;
-
-import junit.framework.TestCase;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,6 +34,7 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import junit.framework.TestCase;
 
 /**
  * Unit test for {@link MinMaxPriorityQueue}.
@@ -752,8 +750,8 @@ public class MinMaxPriorityQueueTest extends TestCase {
     return seed;
   }
 
-  private void insertRandomly(ArrayList<Integer> elements, MinMaxPriorityQueue<Integer> q,
-      Random random) {
+  private static void insertRandomly(
+      ArrayList<Integer> elements, MinMaxPriorityQueue<Integer> q, Random random) {
     while (!elements.isEmpty()) {
       int selectedIndex = random.nextInt(elements.size());
       q.offer(elements.remove(selectedIndex));

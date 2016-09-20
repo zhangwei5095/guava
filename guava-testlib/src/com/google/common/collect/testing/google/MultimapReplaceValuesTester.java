@@ -16,19 +16,18 @@
 
 package com.google.common.collect.testing.google;
 
+import static com.google.common.collect.testing.Helpers.assertContentsAnyOrder;
 import static com.google.common.collect.testing.features.CollectionSize.ZERO;
 import static com.google.common.collect.testing.features.MapFeature.ALLOWS_NULL_KEYS;
 import static com.google.common.collect.testing.features.MapFeature.ALLOWS_NULL_VALUES;
 import static com.google.common.collect.testing.features.MapFeature.SUPPORTS_PUT;
 import static com.google.common.collect.testing.features.MapFeature.SUPPORTS_REMOVE;
-import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.testing.Helpers;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.MapFeature;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -51,7 +50,7 @@ public class MultimapReplaceValuesTester<K, V>
     multimap().replaceValues(k0(), values);
     assertGet(k0(), values);
   }
-  
+
   @MapFeature.Require({SUPPORTS_PUT, SUPPORTS_REMOVE, ALLOWS_NULL_KEYS})
   public void testReplaceValuesWithNullKey() {
     @SuppressWarnings("unchecked")
@@ -59,7 +58,7 @@ public class MultimapReplaceValuesTester<K, V>
     multimap().replaceValues(null, values);
     assertGet(null, values);
   }
-  
+
   @MapFeature.Require({SUPPORTS_PUT, SUPPORTS_REMOVE})
   public void testReplaceEmptyValues() {
     int size = multimap().size();
@@ -69,7 +68,7 @@ public class MultimapReplaceValuesTester<K, V>
     assertGet(k3(), values);
     assertEquals(size + values.size(), multimap().size());
   }
-  
+
   @MapFeature.Require({SUPPORTS_PUT, SUPPORTS_REMOVE})
   public void testReplaceValuesWithEmpty() {
     int size = multimap().size();
@@ -80,19 +79,14 @@ public class MultimapReplaceValuesTester<K, V>
     assertGet(k0());
     assertEquals(size - oldValues.size(), multimap().size());
   }
-  
+
   @MapFeature.Require({SUPPORTS_PUT, SUPPORTS_REMOVE})
   public void testReplaceValuesWithDuplicates() {
     int size = multimap().size();
     List<V> oldValues = new ArrayList<V>(multimap().get(k0()));
-    List<V> values = Arrays.asList(
-        v0(),
-        v3(),
-        v0());
+    List<V> values = Arrays.asList(v0(), v3(), v0());
     assertEquals(oldValues, new ArrayList<V>(multimap().replaceValues(k0(), values)));
-    assertEquals(
-        size - oldValues.size() + multimap().get(k0()).size(),
-        multimap().size());
+    assertEquals(size - oldValues.size() + multimap().get(k0()).size(), multimap().size());
     assertTrue(multimap().get(k0()).containsAll(values));
   }
 
@@ -113,15 +107,14 @@ public class MultimapReplaceValuesTester<K, V>
       assertEquals(size + values.size() - oldKeyValues.size(), multimap().size());
     }
   }
-  
+
   @MapFeature.Require({SUPPORTS_PUT, SUPPORTS_REMOVE})
   public void testReplaceValuesPropagatesToGet() {
     Collection<V> getCollection = multimap().get(k0());
     @SuppressWarnings("unchecked")
     List<V> values = Arrays.asList(v0(), v2(), v3());
     multimap().replaceValues(k0(), values);
-    assertThat(getCollection).containsExactly(
-        v0(), v2(), v3());
+    assertContentsAnyOrder(getCollection, v0(), v2(), v3());
   }
 
   @MapFeature.Require(absent = SUPPORTS_REMOVE)

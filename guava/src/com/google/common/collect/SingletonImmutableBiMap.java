@@ -19,7 +19,7 @@ package com.google.common.collect;
 import static com.google.common.collect.CollectPreconditions.checkEntryNotNull;
 
 import com.google.common.annotations.GwtCompatible;
-
+import com.google.j2objc.annotations.RetainedWith;
 import javax.annotation.Nullable;
 
 /**
@@ -41,14 +41,14 @@ final class SingletonImmutableBiMap<K, V> extends ImmutableBiMap<K, V> {
     this.singleValue = singleValue;
   }
 
-  private SingletonImmutableBiMap(K singleKey, V singleValue,
-      ImmutableBiMap<V, K> inverse) {
+  private SingletonImmutableBiMap(K singleKey, V singleValue, ImmutableBiMap<V, K> inverse) {
     this.singleKey = singleKey;
     this.singleValue = singleValue;
     this.inverse = inverse;
   }
 
-  @Override public V get(@Nullable Object key) {
+  @Override
+  public V get(@Nullable Object key) {
     return singleKey.equals(key) ? singleValue : null;
   }
 
@@ -57,15 +57,18 @@ final class SingletonImmutableBiMap<K, V> extends ImmutableBiMap<K, V> {
     return 1;
   }
 
-  @Override public boolean containsKey(@Nullable Object key) {
+  @Override
+  public boolean containsKey(@Nullable Object key) {
     return singleKey.equals(key);
   }
 
-  @Override public boolean containsValue(@Nullable Object value) {
+  @Override
+  public boolean containsValue(@Nullable Object value) {
     return singleValue.equals(value);
   }
 
-  @Override boolean isPartialView() {
+  @Override
+  boolean isPartialView() {
     return false;
   }
 
@@ -79,6 +82,7 @@ final class SingletonImmutableBiMap<K, V> extends ImmutableBiMap<K, V> {
     return ImmutableSet.of(singleKey);
   }
 
+  @RetainedWith
   transient ImmutableBiMap<V, K> inverse;
 
   @Override
@@ -86,8 +90,7 @@ final class SingletonImmutableBiMap<K, V> extends ImmutableBiMap<K, V> {
     // racy single-check idiom
     ImmutableBiMap<V, K> result = inverse;
     if (result == null) {
-      return inverse = new SingletonImmutableBiMap<V, K>(
-          singleValue, singleKey, this);
+      return inverse = new SingletonImmutableBiMap<V, K>(singleValue, singleKey, this);
     } else {
       return result;
     }

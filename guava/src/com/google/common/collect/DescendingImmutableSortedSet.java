@@ -17,7 +17,6 @@
 package com.google.common.collect;
 
 import com.google.common.annotations.GwtIncompatible;
-
 import javax.annotation.Nullable;
 
 /**
@@ -25,6 +24,7 @@ import javax.annotation.Nullable;
  *
  * @author Louis Wasserman
  */
+@GwtIncompatible
 class DescendingImmutableSortedSet<E> extends ImmutableSortedSet<E> {
   private final ImmutableSortedSet<E> forward;
 

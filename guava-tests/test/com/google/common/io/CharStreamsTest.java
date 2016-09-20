@@ -18,7 +18,6 @@ package com.google.common.io;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-
 import java.io.EOFException;
 import java.io.FilterReader;
 import java.io.IOException;
@@ -26,6 +25,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.CharBuffer;
 import java.util.List;
 
 /**
@@ -40,23 +40,6 @@ public class CharStreamsTest extends IoTestCase {
 
   public void testToString() throws IOException {
     assertEquals(TEXT, CharStreams.toString(new StringReader(TEXT)));
-  }
-
-  public void testSkipFully_blockingRead() throws IOException {
-    Reader reader = new NonSkippingReader("abcdef");
-    CharStreams.skipFully(reader, 6);
-    assertEquals(-1, reader.read());
-  }
-
-  private static class NonSkippingReader extends StringReader {
-    NonSkippingReader(String s) {
-      super(s);
-    }
-
-    @Override
-    public long skip(long n) {
-      return 0;
-    }
   }
 
   public void testReadLines() throws IOException {
@@ -188,6 +171,28 @@ public class CharStreamsTest extends IoTestCase {
     long copied = CharStreams.copy(newNonBufferFillingReader(new StringReader(string)), b);
     assertEquals(string, b.toString());
     assertEquals(string.length(), copied);
+  }
+
+  public void testExhaust_reader() throws IOException {
+    Reader reader = new StringReader(ASCII);
+    assertEquals(ASCII.length(), CharStreams.exhaust(reader));
+    assertEquals(-1, reader.read());
+    assertEquals(0, CharStreams.exhaust(reader));
+
+    Reader empty = new StringReader("");
+    assertEquals(0, CharStreams.exhaust(empty));
+    assertEquals(-1, empty.read());
+  }
+
+  public void testExhaust_readable() throws IOException {
+    CharBuffer buf = CharBuffer.wrap(ASCII);
+    assertEquals(ASCII.length(), CharStreams.exhaust(buf));
+    assertEquals(0, buf.remaining());
+    assertEquals(0, CharStreams.exhaust(buf));
+
+    CharBuffer empty = CharBuffer.wrap("");
+    assertEquals(0, CharStreams.exhaust(empty));
+    assertEquals(0, empty.remaining());
   }
 
   public void testNullWriter() throws Exception {

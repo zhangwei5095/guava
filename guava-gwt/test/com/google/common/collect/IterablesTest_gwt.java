@@ -413,6 +413,11 @@ public void testRemoveAll_iterable() throws Exception {
   testCase.testRemoveAll_iterable();
 }
 
+public void testRemoveIf_iterable() throws Exception {
+  com.google.common.collect.IterablesTest testCase = new com.google.common.collect.IterablesTest();
+  testCase.testRemoveIf_iterable();
+}
+
 public void testRemoveIf_noRandomAccess() throws Exception {
   com.google.common.collect.IterablesTest testCase = new com.google.common.collect.IterablesTest();
   testCase.testRemoveIf_noRandomAccess();
@@ -421,6 +426,11 @@ public void testRemoveIf_noRandomAccess() throws Exception {
 public void testRemoveIf_randomAccess() throws Exception {
   com.google.common.collect.IterablesTest testCase = new com.google.common.collect.IterablesTest();
   testCase.testRemoveIf_randomAccess();
+}
+
+public void testRemoveIf_randomAccess_notPermittingDuplicates() throws Exception {
+  com.google.common.collect.IterablesTest testCase = new com.google.common.collect.IterablesTest();
+  testCase.testRemoveIf_randomAccess_notPermittingDuplicates();
 }
 
 public void testRemoveIf_transformedList() throws Exception {

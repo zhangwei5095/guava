@@ -30,14 +30,12 @@ import com.google.common.collect.testing.google.SetGenerators.ImmutableSetAsList
 import com.google.common.collect.testing.google.SetGenerators.ImmutableSetCopyOfGenerator;
 import com.google.common.collect.testing.google.SetGenerators.ImmutableSetWithBadHashesGenerator;
 import com.google.common.testing.EqualsTester;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 /**
  * Unit test for {@link ImmutableSet}.
@@ -49,7 +47,7 @@ import java.util.Set;
 @GwtCompatible(emulated = true)
 public class ImmutableSetTest extends AbstractImmutableSetTest {
 
-  @GwtIncompatible("suite")
+  @GwtIncompatible // suite
   public static Test suite() {
     TestSuite suite = new TestSuite();
 
@@ -162,7 +160,7 @@ public class ImmutableSetTest extends AbstractImmutableSetTest {
     assertEquals(Collections.singleton(array), set);
   }
 
-  @GwtIncompatible("ImmutableSet.chooseTableSize")
+  @GwtIncompatible // ImmutableSet.chooseTableSize
   public void testChooseTableSize() {
     assertEquals(8, ImmutableSet.chooseTableSize(3));
     assertEquals(8, ImmutableSet.chooseTableSize(4));
@@ -182,7 +180,7 @@ public class ImmutableSetTest extends AbstractImmutableSetTest {
     }
   }
 
-  @GwtIncompatible("RegularImmutableSet.table not in emulation")
+  @GwtIncompatible // RegularImmutableSet.table not in emulation
   public void testResizeTable() {
     verifyTableSize(100, 2, 4);
     verifyTableSize(100, 5, 8);
@@ -192,7 +190,7 @@ public class ImmutableSetTest extends AbstractImmutableSetTest {
     verifyTableSize(17, 15, 32);
   }
 
-  @GwtIncompatible("RegularImmutableSet.table not in emulation")
+  @GwtIncompatible // RegularImmutableSet.table not in emulation
   private void verifyTableSize(int inputSize, int setSize, int tableSize) {
     Builder<Integer> builder = ImmutableSet.builder();
     for (int i = 0; i < inputSize; i++) {
@@ -210,7 +208,7 @@ public class ImmutableSetTest extends AbstractImmutableSetTest {
     assertNotSame(sortedSet, copy);
   }
 
-  @GwtIncompatible("GWT is single threaded")
+  @GwtIncompatible // GWT is single threaded
   public void testCopyOf_threadSafe() {
     verifyThreadSafe();
   }

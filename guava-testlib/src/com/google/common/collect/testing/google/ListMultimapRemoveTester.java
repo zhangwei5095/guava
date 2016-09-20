@@ -14,17 +14,16 @@
 
 package com.google.common.collect.testing.google;
 
+import static com.google.common.collect.testing.Helpers.assertContentsInOrder;
 import static com.google.common.collect.testing.Helpers.copyToList;
 import static com.google.common.collect.testing.Helpers.mapEntry;
 import static com.google.common.collect.testing.features.CollectionSize.SEVERAL;
 import static com.google.common.collect.testing.features.MapFeature.SUPPORTS_REMOVE;
-import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.MapFeature;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -45,7 +44,7 @@ public class ListMultimapRemoveTester<K, V> extends AbstractListMultimapTester<K
 
     List<V> list = multimap().get(k0());
     multimap().remove(k0(), v0());
-    assertThat(list).containsExactly(v1(), v0()).inOrder();
+    assertContentsInOrder(list, v1(), v0());
   }
 
   @SuppressWarnings("unchecked")

@@ -60,9 +60,6 @@ import com.google.common.collect.TreeMultiset;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.reflect.TypeToken;
-
-import junit.framework.TestCase;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -108,6 +105,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
+import junit.framework.TestCase;
 
 /**
  * Tests for {@link FreshValueGenerator}.
@@ -116,6 +114,7 @@ import java.util.regex.Pattern;
  */
 public class FreshValueGeneratorTest extends TestCase {
 
+  @AndroidIncompatible // problem with equality of Type objects?
   public void testFreshInstance() {
     assertFreshInstances(
         String.class, CharSequence.class,
@@ -383,6 +382,7 @@ public class FreshValueGeneratorTest extends TestCase {
     assertFreshInstance(new TypeToken<List<TwoConstantEnum>>() {}, 2);
   }
 
+  @AndroidIncompatible // problem with equality of Type objects?
   public void testOptional() {
     FreshValueGenerator generator = new FreshValueGenerator();
     assertEquals(Optional.absent(), generator.generateFresh(new TypeToken<Optional<String>>() {}));

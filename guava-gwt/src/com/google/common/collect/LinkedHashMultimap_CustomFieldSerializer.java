@@ -19,7 +19,6 @@ package com.google.common.collect;
 import com.google.gwt.user.client.rpc.SerializationException;
 import com.google.gwt.user.client.rpc.SerializationStreamReader;
 import com.google.gwt.user.client.rpc.SerializationStreamWriter;
-
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -31,12 +30,10 @@ import java.util.Map;
  */
 public class LinkedHashMultimap_CustomFieldSerializer {
 
-  public static void deserialize(SerializationStreamReader in,
-      LinkedHashMultimap<?, ?> out) {
-  }
+  public static void deserialize(SerializationStreamReader in, LinkedHashMultimap<?, ?> out) {}
 
-  public static LinkedHashMultimap<Object, Object> instantiate(
-      SerializationStreamReader stream) throws SerializationException {
+  public static LinkedHashMultimap<Object, Object> instantiate(SerializationStreamReader stream)
+      throws SerializationException {
     LinkedHashMultimap<Object, Object> multimap = LinkedHashMultimap.create();
 
     int distinctKeys = stream.readInt();
@@ -56,8 +53,8 @@ public class LinkedHashMultimap_CustomFieldSerializer {
     return multimap;
   }
 
-  public static void serialize(SerializationStreamWriter stream,
-      LinkedHashMultimap<?, ?> multimap) throws SerializationException {
+  public static void serialize(SerializationStreamWriter stream, LinkedHashMultimap<?, ?> multimap)
+      throws SerializationException {
     stream.writeInt(multimap.keySet().size());
     for (Object key : multimap.keySet()) {
       stream.writeObject(key);

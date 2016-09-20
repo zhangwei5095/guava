@@ -26,9 +26,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.testing.TestLogHandler;
-
-import junit.framework.TestSuite;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -36,6 +33,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.EnumSet;
 import java.util.List;
+import junit.framework.TestSuite;
 
 /**
  * Tests for the default implementations of {@code CharSource} methods.
@@ -44,13 +42,16 @@ import java.util.List;
  */
 public class CharSourceTest extends IoTestCase {
 
+  @AndroidIncompatible // Android doesn't understand suites whose tests lack default constructors.
   public static TestSuite suite() {
     TestSuite suite = new TestSuite();
-    suite.addTest(CharSourceTester.tests("CharSource.wrap[CharSequence]",
-        SourceSinkFactories.stringCharSourceFactory()));
-    suite.addTest(CharSourceTester.tests("CharSource.empty[]",
-        SourceSinkFactories.emptyCharSourceFactory()));
-    suite.addTestSuite(CharStreamsTest.class);
+    for (boolean asByteSource : new boolean[] {false, true}) {
+      suite.addTest(CharSourceTester.tests("CharSource.wrap[CharSequence]",
+          SourceSinkFactories.stringCharSourceFactory(), asByteSource));
+      suite.addTest(CharSourceTester.tests("CharSource.empty[]",
+          SourceSinkFactories.emptyCharSourceFactory(), asByteSource));
+    }
+    suite.addTestSuite(CharSourceTest.class);
     return suite;
   }
 

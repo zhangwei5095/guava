@@ -16,6 +16,8 @@
 
 package com.google.common.testing;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
 import com.google.common.base.Equivalence;
@@ -41,7 +43,6 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.ListMultimap;
-import com.google.common.collect.MapConstraint;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
@@ -60,9 +61,6 @@ import com.google.common.io.CharSource;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.AtomicDouble;
-
-import junit.framework.TestCase;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -128,6 +126,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
+import junit.framework.TestCase;
 
 /**
  * Unit test for {@link ArbitraryInstances}.
@@ -214,7 +213,7 @@ public class ArbitraryInstancesTest extends TestCase {
     assertTrue(ArbitraryInstances.get(TreeSet.class).isEmpty());
     assertTrue(ArbitraryInstances.get(TreeMap.class).isEmpty());
     assertFreshInstanceReturned(
-        LinkedList.class, Deque.class, Queue.class, PriorityQueue.class, BitSet.class, 
+        LinkedList.class, Deque.class, Queue.class, PriorityQueue.class, BitSet.class,
         TreeSet.class, TreeMap.class);
   }
 
@@ -224,10 +223,9 @@ public class ArbitraryInstancesTest extends TestCase {
     assertNotNull(ArbitraryInstances.get(Locale.class));
     assertNotNull(ArbitraryInstances.get(Joiner.class).join(ImmutableList.of("a")));
     assertNotNull(ArbitraryInstances.get(Splitter.class).split("a,b"));
-    assertFalse(ArbitraryInstances.get(Optional.class).isPresent());
+    assertThat(ArbitraryInstances.get(Optional.class)).isAbsent();
     ArbitraryInstances.get(Stopwatch.class).start();
     assertNotNull(ArbitraryInstances.get(Ticker.class));
-    assertNotNull(ArbitraryInstances.get(MapConstraint.class));
     assertFreshInstanceReturned(Random.class);
     assertEquals(ArbitraryInstances.get(Random.class).nextInt(),
         ArbitraryInstances.get(Random.class).nextInt());
@@ -259,6 +257,7 @@ public class ArbitraryInstancesTest extends TestCase {
     assertFalse(ArbitraryInstances.get(Equivalence.class).equivalent(1, 2));
   }
 
+  @SuppressWarnings("SelfComparison")
   public void testGet_comparable() {
     @SuppressWarnings("unchecked") // The null value can compare with any Object
     Comparable<Object> comparable = ArbitraryInstances.get(Comparable.class);
@@ -271,9 +270,9 @@ public class ArbitraryInstancesTest extends TestCase {
   }
 
   public void testGet_array() {
-    assertEquals(0, ArbitraryInstances.get(int[].class).length);
-    assertEquals(0, ArbitraryInstances.get(Object[].class).length);
-    assertEquals(0, ArbitraryInstances.get(String[].class).length);
+    assertThat(ArbitraryInstances.get(int[].class)).isEmpty();
+    assertThat(ArbitraryInstances.get(Object[].class)).isEmpty();
+    assertThat(ArbitraryInstances.get(String[].class)).isEmpty();
   }
 
   public void testGet_enum() {
@@ -302,13 +301,17 @@ public class ArbitraryInstancesTest extends TestCase {
   public void testGet_mutable() {
     assertEquals(0, ArbitraryInstances.get(ArrayList.class).size());
     assertEquals(0, ArbitraryInstances.get(HashMap.class).size());
-    assertEquals("", ArbitraryInstances.get(Appendable.class).toString());
-    assertEquals("", ArbitraryInstances.get(StringBuilder.class).toString());
-    assertEquals("", ArbitraryInstances.get(StringBuffer.class).toString());
+    assertThat(ArbitraryInstances.get(Appendable.class).toString()).isEmpty();
+    assertThat(ArbitraryInstances.get(StringBuilder.class).toString()).isEmpty();
+    assertThat(ArbitraryInstances.get(StringBuffer.class).toString()).isEmpty();
     assertFreshInstanceReturned(
-        ArrayList.class, HashMap.class,
-        Appendable.class, StringBuilder.class, StringBuffer.class,
-        Throwable.class, Exception.class);
+        ArrayList.class,
+        HashMap.class,
+        Appendable.class,
+        StringBuilder.class,
+        StringBuffer.class,
+        Throwable.class,
+        Exception.class);
   }
 
   public void testGet_io() throws IOException {
@@ -420,11 +423,11 @@ public class ArbitraryInstancesTest extends TestCase {
   static class NonPublicClass {
     public NonPublicClass() {}
   }
-  
+
   private static class WithPrivateConstructor {
     public static final WithPrivateConstructor INSTANCE = new WithPrivateConstructor();
   }
-  
+
   public static class NoDefaultConstructor {
     public NoDefaultConstructor(@SuppressWarnings("unused") int i) {}
   }
@@ -449,20 +452,20 @@ public class ArbitraryInstancesTest extends TestCase {
   public static class WithGenericConstant<T> {
     public static final WithGenericConstant<String> STRING_CONSTANT =
         new WithGenericConstant<String>();
-  
+
     private WithGenericConstant() {}
   }
 
   public static class WithNullConstant {
     public static final WithNullConstant NULL = null;
-  
+
     private WithNullConstant() {}
   }
 
   public static class WithPublicConstructorAndConstant {
     public static final WithPublicConstructorAndConstant INSTANCE =
         new WithPublicConstructorAndConstant();
-  
+
     public WithPublicConstructorAndConstant() {}
   }
 
@@ -484,14 +487,14 @@ public class ArbitraryInstancesTest extends TestCase {
   public static class NonFinalFieldIgnored {
     public static NonFinalFieldIgnored instance =
         new NonFinalFieldIgnored();
-  
+
     private NonFinalFieldIgnored() {}
   }
 
   public static class NonPublicConstantIgnored {
     static final NonPublicConstantIgnored INSTANCE =
         new NonPublicConstantIgnored();
-  
+
     private NonPublicConstantIgnored() {}
   }
 
@@ -499,7 +502,7 @@ public class ArbitraryInstancesTest extends TestCase {
     // This should cause infinite recursion. But it shouldn't be used anyway.
     public final NonStaticFieldIgnored instance =
         new NonStaticFieldIgnored();
-  
+
     private NonStaticFieldIgnored() {}
   }
 }

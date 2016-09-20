@@ -16,21 +16,21 @@
 
 package com.google.common.collect;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.google.common.collect.testing.ListTestSuiteBuilder;
 import com.google.common.collect.testing.TestStringListGenerator;
 import com.google.common.collect.testing.features.CollectionFeature;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.ListFeature;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 /**
  * Tests for {@code ForwardingList}.
@@ -131,7 +131,7 @@ public class ForwardingListTest extends ForwardingTestCase {
       return standardSubList(fromIndex, toIndex);
     }
   }
-  
+
   private static final List<String> EMPTY_LIST =
       Collections.<String>emptyList();
 
@@ -139,7 +139,7 @@ public class ForwardingListTest extends ForwardingTestCase {
 
   public static Test suite() {
     TestSuite suite = new TestSuite();
-    
+
     suite.addTestSuite(ForwardingListTest.class);
     suite.addTest(ListTestSuiteBuilder.using(new TestStringListGenerator() {
 
@@ -159,10 +159,10 @@ public class ForwardingListTest extends ForwardingTestCase {
     }).named("ForwardingList[ImmutableList] with standard implementations")
         .withFeatures(CollectionSize.ANY, CollectionFeature.ALLOWS_NULL_QUERIES)
         .createTestSuite());
-    
+
     return suite;
   }
-  
+
   @Override public void setUp() throws Exception {
     super.setUp();
     /*
@@ -305,7 +305,7 @@ public class ForwardingListTest extends ForwardingTestCase {
   }
 
   public void testRandomAccess() {
-    assertFalse(forward instanceof RandomAccess);
+    assertThat(forward).isNotInstanceOf(RandomAccess.class);
   }
 
   public void testToString() {

@@ -33,9 +33,6 @@ import com.google.common.collect.testing.Helpers;
 import com.google.common.primitives.Ints;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
-
-import junit.framework.TestCase;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -43,8 +40,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.RandomAccess;
-
 import javax.annotation.Nullable;
+import junit.framework.TestCase;
 
 /**
  * Unit tests for {@code Ordering}.
@@ -70,6 +67,38 @@ public class OrderingTest extends TestCase {
     List<String> strings = ImmutableList.of("b", "a", "d", "c");
     assertEquals(strings, comparator.sortedCopy(strings));
     assertEquals(strings, comparator.immutableSortedCopy(strings));
+  }
+
+  // From https://github.com/google/guava/issues/1342
+  public void testComplicatedOrderingExample() {
+    Integer nullInt = (Integer) null;
+    Ordering<Iterable<Integer>> example =
+        Ordering.<Integer>natural().nullsFirst().reverse().lexicographical().reverse().nullsLast();
+    List<Integer> list1 = Lists.newArrayList();
+    List<Integer> list2 = Lists.newArrayList(1);
+    List<Integer> list3 = Lists.newArrayList(1, 1);
+    List<Integer> list4 = Lists.newArrayList(1, 2);
+    List<Integer> list5 = Lists.newArrayList(1, null, 2);
+    List<Integer> list6 = Lists.newArrayList(2);
+    List<Integer> list7 = Lists.newArrayList(nullInt);
+    List<Integer> list8 = Lists.newArrayList(nullInt, nullInt);
+    List<List<Integer>> list =
+        Lists.newArrayList(list1, list2, list3, list4, list5, list6, list7, list8, null);
+    List<List<Integer>> sorted = example.sortedCopy(list);
+
+    // [[null, null], [null], [1, null, 2], [1, 1], [1, 2], [1], [2], [], null]
+    assertThat(sorted)
+        .containsExactly(
+            Lists.newArrayList(nullInt, nullInt),
+            Lists.newArrayList(nullInt),
+            Lists.newArrayList(1, null, 2),
+            Lists.newArrayList(1, 1),
+            Lists.newArrayList(1, 2),
+            Lists.newArrayList(1),
+            Lists.newArrayList(2),
+            Lists.newArrayList(),
+            null)
+        .inOrder();
   }
 
   public void testNatural() {
@@ -667,7 +696,7 @@ public class OrderingTest extends TestCase {
     assertEquals(ImmutableList.of(-1, 3, foo, bar), result);
   }
 
-  @GwtIncompatible("slow")
+  @GwtIncompatible // slow
   public void testLeastOf_reconcileAgainstSortAndSublist() {
     runLeastOfComparison(1000, 300, 20);
   }
@@ -832,29 +861,29 @@ public class OrderingTest extends TestCase {
 
   // should periodically try increasing this, but it makes the test run long
   private static final int RECURSE_DEPTH = 2;
-  
+
   public void testCombinationsExhaustively_startingFromNatural() {
     testExhaustively(Ordering.<String>natural(), "a", "b", "d");
   }
-  
-  @GwtIncompatible("too slow")
+
+  @GwtIncompatible // too slow
   public void testCombinationsExhaustively_startingFromExplicit() {
     testExhaustively(Ordering.explicit("a", "b", "c", "d"),
         "a", "b", "d");
   }
-  
-  @GwtIncompatible("too slow")
+
+  @GwtIncompatible // too slow
   public void testCombinationsExhaustively_startingFromUsingToString() {
     testExhaustively(Ordering.usingToString(), 1, 12, 2);
   }
 
-  @GwtIncompatible("too slow")
+  @GwtIncompatible // too slow
   public void testCombinationsExhaustively_startingFromFromComparator() {
     testExhaustively(Ordering.from(String.CASE_INSENSITIVE_ORDER),
         "A", "b", "C", "d");
   }
-  
-  @GwtIncompatible("too slow")
+
+  @GwtIncompatible // too slow
   public void testCombinationsExhaustively_startingFromArbitrary() {
     Ordering<Object> arbitrary = Ordering.arbitrary();
     Object[] array = {1, "foo", new Object()};
@@ -1102,7 +1131,7 @@ public class OrderingTest extends TestCase {
     }
   }
 
-  @GwtIncompatible("NullPointerTester")
+  @GwtIncompatible // NullPointerTester
   public void testNullPointerExceptions() {
     NullPointerTester tester = new NullPointerTester();
     tester.testAllPublicStaticMethods(Ordering.class);

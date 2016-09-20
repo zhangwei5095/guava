@@ -16,6 +16,7 @@
 
 package com.google.common.collect;
 
+import static com.google.common.collect.CollectPreconditions.checkRemove;
 import static com.google.common.collect.Iterators.advance;
 import static com.google.common.collect.Iterators.get;
 import static com.google.common.collect.Iterators.getLast;
@@ -39,12 +40,7 @@ import com.google.common.collect.testing.features.CollectionFeature;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.ListFeature;
 import com.google.common.testing.NullPointerTester;
-
-import junit.framework.AssertionFailedError;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,6 +53,10 @@ import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.Vector;
+import junit.framework.AssertionFailedError;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
  * Unit test for {@code Iterators}.
@@ -66,7 +66,7 @@ import java.util.Vector;
 @GwtCompatible(emulated = true)
 public class IteratorsTest extends TestCase {
 
-  @GwtIncompatible("suite")
+  @GwtIncompatible // suite
   public static Test suite() {
     TestSuite suite = new TestSuite(IteratorsTest.class.getSimpleName());
     suite.addTest(testsForRemoveAllAndRetainAll());
@@ -194,8 +194,7 @@ public class IteratorsTest extends TestCase {
       Iterators.getOnlyElement(iterator);
       fail();
     } catch (IllegalArgumentException expected) {
-      assertEquals("expected one element but was: <one, two>",
-                   expected.getMessage());
+      assertThat(expected).hasMessage("expected one element but was: <one, two>");
     }
   }
 
@@ -206,9 +205,8 @@ public class IteratorsTest extends TestCase {
       Iterators.getOnlyElement(iterator);
       fail();
     } catch (IllegalArgumentException expected) {
-      assertEquals("expected one element but was: "
-                   + "<one, two, three, four, five>",
-                   expected.getMessage());
+      assertThat(expected)
+          .hasMessage("expected one element but was: <one, two, three, four, five>");
     }
   }
 
@@ -219,9 +217,8 @@ public class IteratorsTest extends TestCase {
       Iterators.getOnlyElement(iterator);
       fail();
     } catch (IllegalArgumentException expected) {
-      assertEquals("expected one element but was: "
-                   + "<one, two, three, four, five, ...>",
-                   expected.getMessage());
+      assertThat(expected)
+          .hasMessage("expected one element but was: <one, two, three, four, five, ...>");
     }
   }
 
@@ -246,26 +243,25 @@ public class IteratorsTest extends TestCase {
       Iterators.getOnlyElement(iterator, "x");
       fail();
     } catch (IllegalArgumentException expected) {
-      assertEquals("expected one element but was: <foo, bar>",
-                   expected.getMessage());
+      assertThat(expected).hasMessage("expected one element but was: <foo, bar>");
     }
   }
 
-  @GwtIncompatible("Iterators.toArray(Iterator, Class)")
+  @GwtIncompatible // Iterators.toArray(Iterator, Class)
   public void testToArrayEmpty() {
     Iterator<String> iterator = Collections.<String>emptyList().iterator();
     String[] array = Iterators.toArray(iterator, String.class);
     assertTrue(Arrays.equals(new String[0], array));
   }
 
-  @GwtIncompatible("Iterators.toArray(Iterator, Class)")
+  @GwtIncompatible // Iterators.toArray(Iterator, Class)
   public void testToArraySingleton() {
     Iterator<String> iterator = Collections.singletonList("a").iterator();
     String[] array = Iterators.toArray(iterator, String.class);
     assertTrue(Arrays.equals(new String[] { "a" }, array));
   }
 
-  @GwtIncompatible("Iterators.toArray(Iterator, Class)")
+  @GwtIncompatible // Iterators.toArray(Iterator, Class)
   public void testToArray() {
     String[] sourceArray = new String[] {"a", "b", "c"};
     Iterator<String> iterator = asList(sourceArray).iterator();
@@ -315,7 +311,7 @@ public class IteratorsTest extends TestCase {
     assertEquals(expected, actual);
   }
 
-  @GwtIncompatible("unreasonably slow")
+  @GwtIncompatible // unreasonably slow
   public void testFilterUsingIteratorTester() {
     final List<Integer> list = asList(1, 2, 3, 4, 5);
     final Predicate<Integer> isEven = new Predicate<Integer>() {
@@ -429,22 +425,19 @@ public class IteratorsTest extends TestCase {
   public void testTryFind_firstElement() {
     Iterable<String> list = Lists.newArrayList("cool", "pants");
     Iterator<String> iterator = list.iterator();
-    assertEquals("cool",
-        Iterators.tryFind(iterator, Predicates.equalTo("cool")).get());
+    assertThat(Iterators.tryFind(iterator, Predicates.equalTo("cool"))).hasValue("cool");
   }
 
   public void testTryFind_lastElement() {
     Iterable<String> list = Lists.newArrayList("cool", "pants");
     Iterator<String> iterator = list.iterator();
-    assertEquals("pants",
-        Iterators.tryFind(iterator, Predicates.equalTo("pants")).get());
+    assertThat(Iterators.tryFind(iterator, Predicates.equalTo("pants"))).hasValue("pants");
   }
 
   public void testTryFind_alwaysTrue() {
     Iterable<String> list = Lists.newArrayList("cool", "pants");
     Iterator<String> iterator = list.iterator();
-    assertEquals("cool",
-        Iterators.tryFind(iterator, Predicates.alwaysTrue()).get());
+    assertThat(Iterators.tryFind(iterator, Predicates.alwaysTrue())).hasValue("cool");
   }
 
   public void testTryFind_alwaysFalse_orDefault() {
@@ -458,8 +451,7 @@ public class IteratorsTest extends TestCase {
   public void testTryFind_alwaysFalse_isPresent() {
     Iterable<String> list = Lists.newArrayList("cool", "pants");
     Iterator<String> iterator = list.iterator();
-    assertFalse(
-        Iterators.tryFind(iterator, Predicates.alwaysFalse()).isPresent());
+    assertThat(Iterators.tryFind(iterator, Predicates.alwaysFalse())).isAbsent();
     assertFalse(iterator.hasNext());
   }
 
@@ -626,6 +618,69 @@ public class IteratorsTest extends TestCase {
     assertFalse(cycle.hasNext());
   }
 
+  /** An Iterable whose Iterator is rigorous in checking for concurrent modification. */
+  private static final class PickyIterable<E> implements Iterable<E> {
+    final List<E> elements;
+    int modCount = 0;
+
+    PickyIterable(E... elements) {
+      this.elements = new ArrayList<E>(asList(elements));
+    }
+
+    @Override
+    public Iterator<E> iterator() {
+      return new PickyIterator();
+    }
+
+    final class PickyIterator implements Iterator<E> {
+      int expectedModCount = modCount;
+      int index = 0;
+      boolean canRemove;
+
+      @Override
+      public boolean hasNext() {
+        checkConcurrentModification();
+        return index < elements.size();
+      }
+
+      @Override
+      public E next() {
+        checkConcurrentModification();
+        if (!hasNext()) {
+          throw new NoSuchElementException();
+        }
+        canRemove = true;
+        return elements.get(index++);
+      }
+
+      @Override
+      public void remove() {
+        checkConcurrentModification();
+        checkRemove(canRemove);
+        elements.remove(--index);
+        expectedModCount = ++modCount;
+        canRemove = false;
+      }
+
+      void checkConcurrentModification() {
+        if (expectedModCount != modCount) {
+          throw new ConcurrentModificationException();
+        }
+      }
+    }
+  }
+
+  public void testCycleRemoveAfterHasNextExtraPicky() {
+    PickyIterable<String> iterable = new PickyIterable("a");
+    Iterator<String> cycle = Iterators.cycle(iterable);
+    assertTrue(cycle.hasNext());
+    assertEquals("a", cycle.next());
+    assertTrue(cycle.hasNext());
+    cycle.remove();
+    assertTrue(iterable.elements.isEmpty());
+    assertFalse(cycle.hasNext());
+  }
+
   public void testCycleNoSuchElementException() {
     Iterable<String> iterable = Lists.newArrayList("a");
     Iterator<String> cycle = Iterators.cycle(iterable);
@@ -639,7 +694,7 @@ public class IteratorsTest extends TestCase {
     } catch (NoSuchElementException expected) {}
   }
 
-  @GwtIncompatible("unreasonably slow")
+  @GwtIncompatible // unreasonably slow
   public void testCycleUsingIteratorTester() {
     new IteratorTester<Integer>(5, UNMODIFIABLE, asList(1, 2, 1, 2, 1,
         2, 1, 2, 1, 2, 1, 2), IteratorTester.KnownOrder.KNOWN_ORDER) {
@@ -649,7 +704,7 @@ public class IteratorsTest extends TestCase {
     }.test();
   }
 
-  @GwtIncompatible("slow (~5s)")
+  @GwtIncompatible // slow (~5s)
   public void testConcatNoIteratorsYieldsEmpty() {
     new EmptyIteratorTester() {
       @SuppressWarnings("unchecked")
@@ -659,7 +714,7 @@ public class IteratorsTest extends TestCase {
     }.test();
   }
 
-  @GwtIncompatible("slow (~5s)")
+  @GwtIncompatible // slow (~5s)
   public void testConcatOneEmptyIteratorYieldsEmpty() {
     new EmptyIteratorTester() {
       @SuppressWarnings("unchecked")
@@ -669,7 +724,7 @@ public class IteratorsTest extends TestCase {
     }.test();
   }
 
-  @GwtIncompatible("slow (~5s)")
+  @GwtIncompatible // slow (~5s)
   public void testConcatMultipleEmptyIteratorsYieldsEmpty() {
     new EmptyIteratorTester() {
       @Override protected Iterator<Integer> newTargetIterator() {
@@ -678,7 +733,7 @@ public class IteratorsTest extends TestCase {
     }.test();
   }
 
-  @GwtIncompatible("slow (~3s)")
+  @GwtIncompatible // slow (~3s)
   public void testConcatSingletonYieldsSingleton() {
     new SingletonIteratorTester() {
       @SuppressWarnings("unchecked")
@@ -688,7 +743,7 @@ public class IteratorsTest extends TestCase {
     }.test();
   }
 
-  @GwtIncompatible("slow (~5s)")
+  @GwtIncompatible // slow (~5s)
   public void testConcatEmptyAndSingletonAndEmptyYieldsSingleton() {
     new SingletonIteratorTester() {
       @Override protected Iterator<Integer> newTargetIterator() {
@@ -697,7 +752,7 @@ public class IteratorsTest extends TestCase {
     }.test();
   }
 
-  @GwtIncompatible("fairly slow (~40s)")
+  @GwtIncompatible // fairly slow (~40s)
   public void testConcatSingletonAndSingletonYieldsDoubleton() {
     new DoubletonIteratorTester() {
       @Override protected Iterator<Integer> newTargetIterator() {
@@ -706,7 +761,7 @@ public class IteratorsTest extends TestCase {
     }.test();
   }
 
-  @GwtIncompatible("fairly slow (~40s)")
+  @GwtIncompatible // fairly slow (~40s)
   public void testConcatSingletonAndSingletonWithEmptiesYieldsDoubleton() {
     new DoubletonIteratorTester() {
       @Override protected Iterator<Integer> newTargetIterator() {
@@ -716,7 +771,7 @@ public class IteratorsTest extends TestCase {
     }.test();
   }
 
-  @GwtIncompatible("fairly slow (~50s)")
+  @GwtIncompatible // fairly slow (~50s)
   public void testConcatUnmodifiable() {
     new IteratorTester<Integer>(5, UNMODIFIABLE, asList(1, 2),
         IteratorTester.KnownOrder.KNOWN_ORDER) {
@@ -760,6 +815,24 @@ public class IteratorsTest extends TestCase {
     }
   }
 
+  public void testConcatNested_appendToEnd() {
+    final int nestingDepth = 128;
+    Iterator<Integer> iterator = iterateOver();
+    for (int i = 0; i < nestingDepth; i++) {
+      iterator = Iterators.concat(iterator, iterateOver(1));
+    }
+    assertEquals(nestingDepth, Iterators.size(iterator));
+  }
+
+  public void testConcatNested_appendToBeginning() {
+    final int nestingDepth = 128;
+    Iterator<Integer> iterator = iterateOver();
+    for (int i = 0; i < nestingDepth; i++) {
+      iterator = Iterators.concat(iterateOver(1), iterator);
+    }
+    assertEquals(nestingDepth, Iterators.size(iterator));
+  }
+
   public void testAddAllWithEmptyIterator() {
     List<String> alreadyThere = Lists.newArrayList("already", "there");
 
@@ -789,32 +862,29 @@ public class IteratorsTest extends TestCase {
     assertFalse(changed);
   }
 
-  @GwtIncompatible("NullPointerTester")
+  @GwtIncompatible // NullPointerTester
   public void testNullPointerExceptions() {
     NullPointerTester tester = new NullPointerTester();
     tester.testAllPublicStaticMethods(Iterators.class);
   }
 
-  @GwtIncompatible("Only used by @GwtIncompatible code")
-  private static abstract class EmptyIteratorTester
-      extends IteratorTester<Integer> {
+  @GwtIncompatible // Only used by @GwtIncompatible code
+  private static abstract class EmptyIteratorTester extends IteratorTester<Integer> {
     protected EmptyIteratorTester() {
       super(3, MODIFIABLE, Collections.<Integer>emptySet(),
           IteratorTester.KnownOrder.KNOWN_ORDER);
     }
   }
 
-  @GwtIncompatible("Only used by @GwtIncompatible code")
-  private static abstract class SingletonIteratorTester
-      extends IteratorTester<Integer> {
+  @GwtIncompatible // Only used by @GwtIncompatible code
+  private static abstract class SingletonIteratorTester extends IteratorTester<Integer> {
     protected SingletonIteratorTester() {
       super(3, MODIFIABLE, singleton(1), IteratorTester.KnownOrder.KNOWN_ORDER);
     }
   }
 
-  @GwtIncompatible("Only used by @GwtIncompatible code")
-  private static abstract class DoubletonIteratorTester
-      extends IteratorTester<Integer> {
+  @GwtIncompatible // Only used by @GwtIncompatible code
+  private static abstract class DoubletonIteratorTester extends IteratorTester<Integer> {
     protected DoubletonIteratorTester() {
       super(5, MODIFIABLE, newArrayList(1, 2),
           IteratorTester.KnownOrder.KNOWN_ORDER);
@@ -906,7 +976,7 @@ public class IteratorsTest extends TestCase {
     assertFalse(partitions.hasNext());
   }
 
-  @GwtIncompatible("fairly slow (~50s)")
+  @GwtIncompatible // fairly slow (~50s)
   public void testPartition_general() {
     new IteratorTester<List<Integer>>(5,
         IteratorFeature.UNMODIFIABLE,
@@ -937,7 +1007,7 @@ public class IteratorsTest extends TestCase {
     assertEquals(ImmutableList.of(3), first);
   }
 
-  @GwtIncompatible("?")
+  @GwtIncompatible // ?
   // TODO: Figure out why this is failing in GWT.
   public void testPartitionRandomAccess() {
     Iterator<Integer> source = asList(1, 2, 3).iterator();
@@ -979,7 +1049,7 @@ public class IteratorsTest extends TestCase {
     assertFalse(partitions.hasNext());
   }
 
-  @GwtIncompatible("fairly slow (~50s)")
+  @GwtIncompatible // fairly slow (~50s)
   public void testPaddedPartition_general() {
     new IteratorTester<List<Integer>>(5,
         IteratorFeature.UNMODIFIABLE,
@@ -1074,7 +1144,7 @@ public class IteratorsTest extends TestCase {
     } catch (IndexOutOfBoundsException expected) {}
   }
 
-  @GwtIncompatible("unreasonably slow")
+  @GwtIncompatible // unreasonably slow
   public void testForArrayUsingTester() {
     new IteratorTester<Integer>(6, UNMODIFIABLE, asList(1, 2, 3),
         IteratorTester.KnownOrder.KNOWN_ORDER) {
@@ -1084,7 +1154,7 @@ public class IteratorsTest extends TestCase {
     }.test();
   }
 
-  @GwtIncompatible("unreasonably slow")
+  @GwtIncompatible // unreasonably slow
   public void testForArrayWithOffsetUsingTester() {
     new IteratorTester<Integer>(6, UNMODIFIABLE, asList(1, 2, 3),
         IteratorTester.KnownOrder.KNOWN_ORDER) {
@@ -1237,7 +1307,7 @@ public class IteratorsTest extends TestCase {
     assertEquals("pants", list.get(0));
   }
 
-  @GwtIncompatible("fairly slow (~30s)")
+  @GwtIncompatible // fairly slow (~30s)
   public void testLimitUsingIteratorTester() {
     final List<Integer> list = Lists.newArrayList(1, 2, 3, 4, 5);
     new IteratorTester<Integer>(5, MODIFIABLE, newArrayList(1, 2, 3),
@@ -1433,7 +1503,7 @@ public class IteratorsTest extends TestCase {
     assertEquals(3, Iterators.frequency(list.iterator(), null));
   }
 
-  @GwtIncompatible("slow (~4s)")
+  @GwtIncompatible // slow (~4s)
   public void testSingletonIterator() {
     new IteratorTester<Integer>(
         3, UNMODIFIABLE, singleton(1), IteratorTester.KnownOrder.KNOWN_ORDER) {
@@ -1485,7 +1555,7 @@ public class IteratorsTest extends TestCase {
     assertEquals(newArrayList("b", "d"), list);
   }
 
-  @GwtIncompatible("ListTestSuiteBuilder")
+  @GwtIncompatible // ListTestSuiteBuilder
   private static Test testsForRemoveAllAndRetainAll() {
     return ListTestSuiteBuilder.using(new TestStringListGenerator() {
           @Override public List<String> create(final String[] elements) {
@@ -1537,7 +1607,7 @@ public class IteratorsTest extends TestCase {
     assertFalse(consumingIterator.hasNext());
   }
 
-  @GwtIncompatible("?")
+  @GwtIncompatible // ?
   // TODO: Figure out why this is failing in GWT.
   public void testConsumingIterator_duelingIterators() {
     // Test data

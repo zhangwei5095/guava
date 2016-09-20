@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
-
 import junit.framework.TestCase;
 
 /**
@@ -399,7 +398,7 @@ public final class InternetDomainNameTest extends TestCase {
     return InternetDomainName.from(domain);
   }
 
-  @GwtIncompatible("NullPointerTester")
+  @GwtIncompatible // NullPointerTester
   public void testNulls() {
     final NullPointerTester tester = new NullPointerTester();
 

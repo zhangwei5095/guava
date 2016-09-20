@@ -32,16 +32,14 @@ import com.google.common.collect.testing.google.BiMapGenerators.ImmutableBiMapGe
 import com.google.common.collect.testing.google.BiMapInverseTester;
 import com.google.common.collect.testing.google.BiMapTestSuiteBuilder;
 import com.google.common.testing.SerializableTester;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
  * Tests for {@link ImmutableBiMap}.
@@ -53,7 +51,7 @@ public class ImmutableBiMapTest extends TestCase {
 
   // TODO: Reduce duplication of ImmutableMapTest code
 
-  @GwtIncompatible("suite")
+  @GwtIncompatible // suite
   public static Test suite() {
     TestSuite suite = new TestSuite();
 
@@ -204,6 +202,41 @@ public class ImmutableBiMapTest extends TestCase {
           1, "one", 2, "two", 3, "three", 4, "four", 5, "five");
     }
 
+    public void testBuilder_orderEntriesByValue() {
+      ImmutableBiMap<String, Integer> map =
+          ImmutableBiMap.<String, Integer>builder()
+              .orderEntriesByValue(Ordering.natural())
+              .put("three", 3)
+              .put("one", 1)
+              .put("five", 5)
+              .put("four", 4)
+              .put("two", 2)
+              .build();
+      assertMapEquals(map,
+          "one", 1, "two", 2, "three", 3, "four", 4, "five", 5);
+      assertMapEquals(map.inverse(),
+          1, "one", 2, "two", 3, "three", 4, "four", 5, "five");
+    }
+
+    public void testBuilder_orderEntriesByValueAfterExactSizeBuild() {
+      ImmutableBiMap.Builder<String, Integer> builder =
+          new ImmutableBiMap.Builder<String, Integer>(2).put("four", 4).put("one", 1);
+      ImmutableMap<String, Integer> keyOrdered = builder.build();
+      ImmutableMap<String, Integer> valueOrdered =
+          builder.orderEntriesByValue(Ordering.natural()).build();
+      assertMapEquals(keyOrdered, "four", 4, "one", 1);
+      assertMapEquals(valueOrdered, "one", 1, "four", 4);
+    }
+
+    public void testBuilder_orderEntriesByValue_usedTwiceFails() {
+      ImmutableBiMap.Builder<String, Integer> builder = new Builder<String, Integer>()
+          .orderEntriesByValue(Ordering.natural());
+      try {
+        builder.orderEntriesByValue(Ordering.natural());
+        fail("Expected IllegalStateException");
+      } catch (IllegalStateException expected) {}
+    }
+
     public void testBuilderPutAllWithEmptyMap() {
       ImmutableBiMap<String, Integer> map = new Builder<String, Integer>()
           .putAll(Collections.<String, Integer>emptyMap())
@@ -293,7 +326,7 @@ public class ImmutableBiMapTest extends TestCase {
         builder.build();
         fail();
       } catch (IllegalArgumentException expected) {
-        assertTrue(expected.getMessage().contains("one"));
+        assertThat(expected.getMessage()).contains("one");
       }
     }
 
@@ -366,7 +399,7 @@ public class ImmutableBiMapTest extends TestCase {
         ImmutableBiMap.of("one", 1, "one", 1);
         fail();
       } catch (IllegalArgumentException expected) {
-        assertTrue(expected.getMessage().contains("one"));
+        assertThat(expected.getMessage()).contains("one");
       }
     }
 
@@ -440,7 +473,7 @@ public class ImmutableBiMapTest extends TestCase {
         ImmutableBiMap.copyOf(map);
         fail();
       } catch (IllegalArgumentException expected) {
-        assertTrue(expected.getMessage().contains("1"));
+        assertThat(expected.getMessage()).contains("1");
       }
     }
   }
@@ -479,13 +512,13 @@ public class ImmutableBiMapTest extends TestCase {
       assertSame(bimap, bimap.inverse().inverse());
     }
 
-    @GwtIncompatible("SerializableTester")
+    @GwtIncompatible // SerializableTester
     public void testEmptySerialization() {
       ImmutableBiMap<String, Integer> bimap = ImmutableBiMap.of();
       assertSame(bimap, SerializableTester.reserializeAndAssert(bimap));
     }
 
-    @GwtIncompatible("SerializableTester")
+    @GwtIncompatible // SerializableTester
     public void testSerialization() {
       ImmutableBiMap<String, Integer> bimap = ImmutableBiMap.copyOf(
           ImmutableMap.of("one", 1, "two", 2));
@@ -496,7 +529,7 @@ public class ImmutableBiMapTest extends TestCase {
       assertSame(copy, copy.inverse().inverse());
     }
 
-    @GwtIncompatible("SerializableTester")
+    @GwtIncompatible // SerializableTester
     public void testInverseSerialization() {
       ImmutableBiMap<String, Integer> bimap = ImmutableBiMap.copyOf(
           ImmutableMap.of(1, "one", 2, "two")).inverse();

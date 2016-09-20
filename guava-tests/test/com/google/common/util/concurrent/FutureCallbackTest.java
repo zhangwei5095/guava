@@ -16,20 +16,15 @@
 
 package com.google.common.util.concurrent;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
-import com.google.common.base.Preconditions;
-
-import junit.framework.TestCase;
-
-import org.mockito.Mockito;
-
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
 import javax.annotation.Nullable;
+import junit.framework.TestCase;
+import org.mockito.Mockito;
 
 /**
  * Test for {@link FutureCallback}.
@@ -68,6 +63,7 @@ public class FutureCallbackTest extends TestCase {
     FutureCallback<String> callback =
         new FutureCallback<String>() {
           private boolean called = false;
+
           @Override
           public void onSuccess(String result) {
             fail("Was not expecting onSuccess() to be called.");
@@ -76,7 +72,7 @@ public class FutureCallbackTest extends TestCase {
           @Override
           public synchronized void onFailure(Throwable t) {
             assertFalse(called);
-            assertTrue(t instanceof CancellationException);
+            assertThat(t).isInstanceOf(CancellationException.class);
             called = true;
           }
         };
@@ -86,19 +82,19 @@ public class FutureCallbackTest extends TestCase {
 
   public void testThrowErrorFromGet() {
     Error error = new AssertionError("ASSERT!");
-    ListenableFuture<String> f = ThrowingFuture.throwingError(error);
+    ListenableFuture<String> f = UncheckedThrowingFuture.throwingError(error);
     MockCallback callback = new MockCallback(error);
     Futures.addCallback(f, callback);
   }
 
   public void testRuntimeExeceptionFromGet() {
     RuntimeException e = new IllegalArgumentException("foo not found");
-    ListenableFuture<String> f = ThrowingFuture.throwingRuntimeException(e);
+    ListenableFuture<String> f = UncheckedThrowingFuture.throwingRuntimeException(e);
     MockCallback callback = new MockCallback(e);
     Futures.addCallback(f, callback);
   }
 
-  @GwtIncompatible("Mockito")
+  @GwtIncompatible // Mockito
   public void testOnSuccessThrowsRuntimeException() throws Exception {
     RuntimeException exception = new RuntimeException();
     String result = "result";
@@ -113,7 +109,7 @@ public class FutureCallbackTest extends TestCase {
     Mockito.verifyNoMoreInteractions(callback);
   }
 
-  @GwtIncompatible("Mockito")
+  @GwtIncompatible // Mockito
   public void testOnSuccessThrowsError() throws Exception {
     class TestError extends Error {}
     TestError error = new TestError();
@@ -153,81 +149,6 @@ public class FutureCallbackTest extends TestCase {
     public void execute(Runnable command) {
       command.run();
       runCount++;
-    }
-  }
-
-  // TODO(user): Move to testing, unify with RuntimeExceptionThrowingFuture
-
-  /**
-   * A {@link Future} implementation which always throws directly from calls to
-   * get() (i.e. not wrapped in ExecutionException.
-   * For just a normal Future failure, use {@link SettableFuture}).
-   *
-   * <p>Useful for testing the behavior of Future utilities against odd futures.
-   *
-   * @author Anthony Zana
-   */
-  private static class ThrowingFuture<V> implements ListenableFuture<V> {
-    private final Error error;
-    private final RuntimeException runtime;
-
-    public static <V> ListenableFuture<V> throwingError(Error error) {
-      return new ThrowingFuture<V>(error);
-    }
-
-    public static <V> ListenableFuture<V>
-        throwingRuntimeException(RuntimeException e) {
-      return new ThrowingFuture<V>(e);
-    }
-
-    private ThrowingFuture(Error error) {
-      this.error = Preconditions.checkNotNull(error);
-      this.runtime = null;
-    }
-
-    public ThrowingFuture(RuntimeException e) {
-      this.runtime = Preconditions.checkNotNull(e);
-      this.error = null;
-    }
-
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-      return false;
-    }
-
-    @Override
-    public boolean isCancelled() {
-      return false;
-    }
-
-    @Override
-    public boolean isDone() {
-      return true;
-    }
-
-    @Override
-    public V get() {
-      throwOnGet();
-      throw new AssertionError("Unreachable");
-    }
-
-    @Override
-    public V get(long timeout, TimeUnit unit) {
-      throwOnGet();
-      throw new AssertionError("Unreachable");
-    }
-
-    @Override
-    public void addListener(Runnable listener, Executor executor) {
-      executor.execute(listener);
-    }
-
-    private void throwOnGet() {
-      if (error != null) {
-        throw error;
-      } else {
-        throw runtime;
-      }
     }
   }
 

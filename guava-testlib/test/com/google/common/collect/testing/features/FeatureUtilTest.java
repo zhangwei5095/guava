@@ -20,15 +20,13 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-
-import junit.framework.TestCase;
-
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Set;
+import junit.framework.TestCase;
 
 /**
  * @author George van den Driessche
@@ -104,10 +102,10 @@ public class FeatureUtilTest extends TestCase {
     }
   }
 
+  @AndroidIncompatible // Android attempts to run directly
   @NonTesterAnnotation
   @ExampleDerivedFeature.Require({ExampleDerivedFeature.DERIVED_FEATURE_2})
-  private static class ExampleDerivedInterfaceTester
-      extends ExampleBaseInterfaceTester {
+  private static class ExampleDerivedInterfaceTester extends ExampleBaseInterfaceTester {
     // Exists to test that our framework doesn't run it:
     @SuppressWarnings("unused")
     @ExampleDerivedFeature.Require({
@@ -202,6 +200,7 @@ public class FeatureUtilTest extends TestCase {
         ExampleBaseFeature.BASE_FEATURE_2);
   }
 
+  @AndroidIncompatible // Android runs ExampleDerivedInterfaceTester directly if it exists
   public void testBuildTesterRequirements_class() throws Exception {
     assertEquals(FeatureUtil.buildTesterRequirements(
             ExampleBaseInterfaceTester.class),
@@ -218,6 +217,7 @@ public class FeatureUtilTest extends TestCase {
             Collections.<Feature<?>>emptySet()));
   }
 
+  @AndroidIncompatible // Android runs ExampleDerivedInterfaceTester directly if it exists
   public void testBuildTesterRequirements_method() throws Exception {
     assertEquals(FeatureUtil.buildTesterRequirements(
         ExampleDerivedInterfaceTester.class.getMethod(
@@ -240,8 +240,8 @@ public class FeatureUtilTest extends TestCase {
             Collections.<Feature<?>>emptySet()));
   }
 
-  public void testBuildTesterRequirements_classClassConflict()
-      throws Exception {
+  @AndroidIncompatible // Android runs ExampleDerivedInterfaceTester directly if it exists
+  public void testBuildTesterRequirements_classClassConflict() throws Exception {
     try {
       FeatureUtil.buildTesterRequirements(
           ExampleDerivedInterfaceTester_Conflict.class);
@@ -252,8 +252,8 @@ public class FeatureUtilTest extends TestCase {
     }
   }
 
-  public void testBuildTesterRequirements_methodClassConflict()
-      throws Exception {
+  @AndroidIncompatible // Android runs ExampleDerivedInterfaceTester directly if it exists
+  public void testBuildTesterRequirements_methodClassConflict() throws Exception {
     final Method method = ExampleDerivedInterfaceTester.class
         .getMethod("testRequiringConflictingFeatures");
     try {
@@ -265,6 +265,7 @@ public class FeatureUtilTest extends TestCase {
     }
   }
 
+  @AndroidIncompatible // Android runs ExampleDerivedInterfaceTester directly if it exists
   public void testBuildDeclaredTesterRequirements() throws Exception {
     assertEquals(FeatureUtil.buildDeclaredTesterRequirements(
         ExampleDerivedInterfaceTester.class

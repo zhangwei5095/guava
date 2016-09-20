@@ -16,19 +16,20 @@
 
 package com.google.common.collect.testing.google;
 
+import static com.google.common.collect.testing.Helpers.assertContentsAnyOrder;
+import static com.google.common.collect.testing.Helpers.assertEmpty;
 import static com.google.common.collect.testing.features.CollectionSize.SEVERAL;
 import static com.google.common.collect.testing.features.CollectionSize.ZERO;
 import static com.google.common.collect.testing.features.MapFeature.ALLOWS_ANY_NULL_QUERIES;
 import static com.google.common.collect.testing.features.MapFeature.ALLOWS_NULL_KEYS;
 import static com.google.common.collect.testing.features.MapFeature.SUPPORTS_REMOVE;
-import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.collect.testing.google.GoogleHelpers.assertEmpty;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.testing.Helpers;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.MapFeature;
-
 import java.util.Collection;
 
 /**
@@ -40,14 +41,14 @@ import java.util.Collection;
 public class MultimapRemoveAllTester<K, V> extends AbstractMultimapTester<K, V, Multimap<K, V>> {
   @MapFeature.Require(SUPPORTS_REMOVE)
   public void testRemoveAllAbsentKey() {
-    assertThat(multimap().removeAll(k3())).isEmpty();
+    assertEmpty(multimap().removeAll(k3()));
     expectUnchanged();
   }
 
   @CollectionSize.Require(absent = ZERO)
   @MapFeature.Require(SUPPORTS_REMOVE)
   public void testRemoveAllPresentKey() {
-    assertThat(multimap().removeAll(k0())).containsExactly(v0());
+    assertContentsAnyOrder(multimap().removeAll(k0()), v0());
     expectMissing(e0());
   }
 
@@ -58,7 +59,7 @@ public class MultimapRemoveAllTester<K, V> extends AbstractMultimapTester<K, V, 
 
     multimap().removeAll(k0());
 
-    assertThat(getResult).isEmpty();
+    assertEmpty(getResult);
     expectMissing(e0());
   }
 
@@ -66,28 +67,25 @@ public class MultimapRemoveAllTester<K, V> extends AbstractMultimapTester<K, V, 
   @MapFeature.Require(SUPPORTS_REMOVE)
   public void testRemoveAllMultipleValues() {
     resetContainer(
-        Helpers.mapEntry(k0(), v0()),
-        Helpers.mapEntry(k0(), v1()),
-        Helpers.mapEntry(k0(), v2()));
+        Helpers.mapEntry(k0(), v0()), Helpers.mapEntry(k0(), v1()), Helpers.mapEntry(k0(), v2()));
 
-    assertThat(multimap().removeAll(k0()))
-        .containsExactly(v0(), v1(), v2());
-    assertTrue(multimap().isEmpty());
+    assertContentsAnyOrder(multimap().removeAll(k0()), v0(), v1(), v2());
+    assertEmpty(multimap());
   }
 
   @CollectionSize.Require(absent = ZERO)
-  @MapFeature.Require({ SUPPORTS_REMOVE, ALLOWS_NULL_KEYS })
+  @MapFeature.Require({SUPPORTS_REMOVE, ALLOWS_NULL_KEYS})
   public void testRemoveAllNullKeyPresent() {
     initMultimapWithNullKey();
 
-    assertThat(multimap().removeAll(null)).containsExactly(getValueForNullKey());
+    assertContentsAnyOrder(multimap().removeAll(null), getValueForNullKey());
 
     expectMissing(Helpers.mapEntry((K) null, getValueForNullKey()));
   }
 
-  @MapFeature.Require({ SUPPORTS_REMOVE, ALLOWS_ANY_NULL_QUERIES})
+  @MapFeature.Require({SUPPORTS_REMOVE, ALLOWS_ANY_NULL_QUERIES})
   public void testRemoveAllNullKeyAbsent() {
-    assertThat(multimap().removeAll(null)).isEmpty();
+    assertEmpty(multimap().removeAll(null));
     expectUnchanged();
   }
 }

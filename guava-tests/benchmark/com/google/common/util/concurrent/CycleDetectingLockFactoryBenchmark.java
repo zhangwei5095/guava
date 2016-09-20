@@ -19,7 +19,6 @@ package com.google.common.util.concurrent;
 import com.google.caliper.BeforeExperiment;
 import com.google.caliper.Benchmark;
 import com.google.caliper.Param;
-
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -58,7 +57,7 @@ public class CycleDetectingLockFactoryBenchmark {
     lockAndUnlock(factory.newReentrantLock("foo"), reps);
   }
 
-  private void lockAndUnlock(Lock lock, int reps) {
+  private static void lockAndUnlock(Lock lock, int reps) {
     for (int i = 0; i < reps; i++) {
       lock.lock();
       lock.unlock();
@@ -73,7 +72,7 @@ public class CycleDetectingLockFactoryBenchmark {
     lockAndUnlockNested(detectingLocks, reps);
   }
 
-  private void lockAndUnlockNested(Lock[] locks, int reps) {
+  private static void lockAndUnlockNested(Lock[] locks, int reps) {
     for (int i = 0; i < reps; i++) {
       for (int j = 0; j < locks.length; j++) {
         locks[j].lock();

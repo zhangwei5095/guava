@@ -15,6 +15,7 @@
 package com.google.common.cache;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.truth.Truth.assertThat;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
@@ -35,7 +36,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.FakeTicker;
-
 import java.lang.ref.Reference;
 import java.util.Collection;
 import java.util.List;
@@ -45,7 +45,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceArray;
-
 import javax.annotation.Nullable;
 
 /**
@@ -199,7 +198,7 @@ class CacheTesting {
       // cleanup and then check count after we have a strong reference to all entries
       segment.cleanUp();
       // under high memory pressure keys/values may be nulled out but not yet enqueued
-      assertTrue(table.size() <= segment.count);
+      assertThat(table.size()).isAtMost(segment.count);
       for (Entry<?, ?> entry : table.entrySet()) {
         assertNotNull(entry.getKey());
         assertNotNull(entry.getValue());
@@ -232,7 +231,7 @@ class CacheTesting {
           if (prev != null) {
             assertSame(prev, current.getPreviousInWriteQueue());
             assertSame(prev.getNextInWriteQueue(), current);
-            assertTrue(prev.getWriteTime() <= current.getWriteTime());
+            assertThat(prev.getWriteTime()).isAtMost(current.getWriteTime());
           }
           Object key = current.getKey();
           if (key != null) {
@@ -480,8 +479,8 @@ class CacheTesting {
     assertTrue(collection.isEmpty());
     assertEquals(0, collection.size());
     assertFalse(collection.iterator().hasNext());
-    assertEquals(0, collection.toArray().length);
-    assertEquals(0, collection.toArray(new Object[0]).length);
+    assertThat(collection.toArray()).isEmpty();
+    assertThat(collection.toArray(new Object[0])).isEmpty();
     if (collection instanceof Set) {
       new EqualsTester()
           .addEqualityGroup(ImmutableSet.of(), collection)

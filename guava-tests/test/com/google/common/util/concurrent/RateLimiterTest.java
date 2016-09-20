@@ -28,18 +28,15 @@ import com.google.common.collect.Lists;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.testing.NullPointerTester.Visibility;
 import com.google.common.util.concurrent.RateLimiter.SleepingStopwatch;
-
-import junit.framework.TestCase;
-
-import org.easymock.EasyMock;
-import org.mockito.Mockito;
-
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import junit.framework.TestCase;
+import org.easymock.EasyMock;
+import org.mockito.Mockito;
 
 /**
  * Tests for RateLimiter.
@@ -167,8 +164,9 @@ public class RateLimiterTest extends TestCase {
   }
 
   public void testCreateWarmupParameterValidation() {
-    RateLimiter.create(1.0, 1, NANOSECONDS);
-    RateLimiter.create(1.0, 0, NANOSECONDS);
+    RateLimiter unused;
+    unused = RateLimiter.create(1.0, 1, NANOSECONDS);
+    unused = RateLimiter.create(1.0, 0, NANOSECONDS);
 
     try {
       RateLimiter.create(0.0, 1, NANOSECONDS);
@@ -183,6 +181,7 @@ public class RateLimiterTest extends TestCase {
     }
   }
 
+  @AndroidIncompatible // difference in String.format rounding?
   public void testWarmUp() {
     RateLimiter limiter = RateLimiter.create(stopwatch, 2.0, 4000, MILLISECONDS, 3.0);
     for (int i = 0; i < 8; i++) {
@@ -248,6 +247,7 @@ public class RateLimiterTest extends TestCase {
         "R0.00, R0.20, R0.20, R0.20, R0.20, R0.20, R0.20, R0.20"); // #3
   }
 
+  @AndroidIncompatible // difference in String.format rounding?
   public void testWarmUpAndUpdate() {
     RateLimiter limiter = RateLimiter.create(stopwatch, 2.0, 4000, MILLISECONDS, 3.0);
     for (int i = 0; i < 8; i++) {
@@ -539,7 +539,7 @@ public class RateLimiterTest extends TestCase {
     }
 
     @Override
-    void sleepMicrosUninterruptibly(long micros) {
+    protected void sleepMicrosUninterruptibly(long micros) {
       sleepMicros("R", micros);
     }
 
@@ -557,16 +557,29 @@ public class RateLimiterTest extends TestCase {
     }
   }
 
-  public void testMocking() throws Exception {
-    RateLimiter mockito = Mockito.mock(RateLimiter.class);
-    RateLimiter easyMock = EasyMock.createNiceMock(RateLimiter.class);
-    EasyMock.replay(easyMock);
+  /*
+   * Note: Mockito appears to lose its ability to Mock doGetRate as of Android 21. If we start
+   * testing with that version or newer, we'll need to suppress this test (or see if Mockito can be
+   * changed to support this).
+   */
+  public void testMockingMockito() throws Exception {
+    RateLimiter mock = Mockito.mock(RateLimiter.class);
+    doTestMocking(mock);
+  }
+
+  @AndroidIncompatible // EasyMock Class Extension doesn't appear to work on Android.
+  public void testMockingEasyMock() throws Exception {
+    RateLimiter mock = EasyMock.createNiceMock(RateLimiter.class);
+    EasyMock.replay(mock);
+    doTestMocking(mock);
+  }
+
+  private static void doTestMocking(RateLimiter mock) throws Exception {
     for (Method method : RateLimiter.class.getMethods()) {
       if (!isStatic(method.getModifiers())
           && !NOT_WORKING_ON_MOCKS.contains(method.getName())
           && !method.getDeclaringClass().equals(Object.class)) {
-        method.invoke(mockito, arbitraryParameters(method));
-        method.invoke(easyMock, arbitraryParameters(method));
+        method.invoke(mock, arbitraryParameters(method));
       }
     }
   }
@@ -581,7 +594,7 @@ public class RateLimiterTest extends TestCase {
   }
 
   private static final ImmutableSet<String> NOT_WORKING_ON_MOCKS =
-      ImmutableSet.of("latestPermitAgeSec", "setRate");
+      ImmutableSet.of("latestPermitAgeSec", "setRate", "getAvailablePermits");
 
   // We would use ArbitraryInstances, but it returns 0, invalid for many RateLimiter methods.
   private static final ImmutableClassToInstanceMap<Object> PARAMETER_VALUES =

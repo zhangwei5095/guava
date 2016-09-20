@@ -21,14 +21,14 @@ import static com.google.common.collect.CollectPreconditions.checkNonnegative;
 import static com.google.common.collect.ObjectArrays.checkElementsNotNull;
 
 import com.google.common.annotations.GwtCompatible;
-
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
 import javax.annotation.Nullable;
 
 /**
@@ -40,7 +40,10 @@ import javax.annotation.Nullable;
  * ImmutableList}, which have well-defined {@link #equals} semantics, thus avoiding a common source
  * of bugs and confusion.
  *
- * <h3>About <i>all</i> public {@code Immutable-} types in this package</h3>
+ * <h3>About <i>all</i> {@code Immutable-} collections</h3>
+ *
+ * <p>The remainder of this documentation applies to every public {@code Immutable-} type in this
+ * package, whether it is a subtype of {@code ImmutableCollection} or not.
  *
  * <h4>Guarantees</h4>
  *
@@ -48,62 +51,72 @@ import javax.annotation.Nullable;
  *
  * <ul>
  * <li><b>Shallow immutability.</b> Elements can never be added, removed or replaced in this
- *     collection. This is a stronger guarantee than that of {@link
- *     Collections#unmodifiableCollection}, whose contents change whenever the wrapped collection
- *     is modified.
+ *     collection. This is a stronger guarantee than that of
+ *     {@link Collections#unmodifiableCollection}, whose contents change whenever the wrapped
+ *     collection is modified.
  * <li><b>Null-hostility.</b> This collection will never contain a null element.
- * <li><b>Deterministic iteration.</b> The specific iteration order depends on how the collection
- *     was created. See the appropriate factory method for details.
+ * <li><b>Deterministic iteration.</b> The iteration order is always well-defined, depending on how
+ *     the collection was created (see the appropriate factory method for details). View collections
+ *     such as {@link ImmutableMultiset#elementSet} iterate in the same order as the parent, except
+ *     as noted.
  * <li><b>Thread safety.</b> It is safe to access this collection concurrently from multiple
  *     threads.
  * <li><b>Integrity.</b> This type cannot be subclassed outside this package (which would allow
  *     these guarantees to be violated).
  * </ul>
  *
- * <h4>Treat as interfaces, not implementations</h4>
+ * <h4>"Interfaces", not implementations</h4>
  *
- * <p>Each of these public classes, such as {@link ImmutableList}, is a <i>type</i>, offering
- * meaningful behavioral guarantees -- not a specific <i>implementation</i> (as in the case of, say,
- * {@link ArrayList}). You should treat them as interfaces in every important sense of the word.
+ * <p>Each public class, such as {@link ImmutableSet}, is a <i>type</i> offering meaningful
+ * behavioral guarantees -- not merely a specific <i>implementation</i> as in the case of, say,
+ * {@link ArrayList}. You should treat them as interfaces in every important sense of the word.
  *
  * <p>For field types and method return types, you should generally use the immutable type (such as
- * {@link ImmutableList}) instead of the basic collection interface type (such as {@link List}). The
- * semantic guarantees listed above are almost always useful to communicate to your callers.
+ * {@link ImmutableList}) instead of the general collection interface type (such as {@link List}).
+ * This communicates to your callers all of the semantic guarantees listed above, which is almost
+ * always very useful information.
  *
  * <p>On the other hand, a <i>parameter</i> type of {@link ImmutableList} is generally a nuisance to
- * callers; instead, accept {@link Iterable} and pass it to {@link ImmutableList#copyOf(Iterable)}
- * yourself.
+ * callers. Instead, accept {@link Iterable} and have your method or constructor body pass it to the
+ * appropriate {@code copyOf} method itself.
  *
  * <h4>Creation</h4>
  *
  * <p>Except for logically "abstract" types like {@code ImmutableCollection} itself, each {@code
- * Immutable} type provides the static operations you need to obtain instances of that type:
+ * Immutable} type provides the static operations you need to obtain instances of that type. These
+ * usually include:
  *
  * <ul>
  * <li>Static methods named {@code of}, accepting an explicit list of elements or entries.
- * <li>Static methods named {@code copyOf}, accepting an existing collection whose contents should
- *     be copied.
+ * <li>Static methods named {@code copyOf} (or {@code copyOfSorted}), accepting an existing
+ *     collection whose contents should be copied.
  * <li>A static nested {@code Builder} class which can be used to populate a new immutable instance.
  * </ul>
  *
- * <h4>Other common properties</h4>
+ * <h4>Warnings</h4>
  *
  * <ul>
- * <li>View collections, such as {@link ImmutableMap#keySet} or {@link ImmutableList#subList},
- *     return the appropriate {@code Immutable-} subtype. This is true even when the language does
- *     not permit the method's return type to express it (see the case of {@link
- *     ImmutableListMultimap#asMap}, for example).
+ * <li><b>Warning:</b> as with any collection, it is almost always a bad idea to modify an element
+ *     (in a way that affects its {@link Object#equals} behavior) while it is contained in a
+ *     collection. Undefined behavior and bugs will result. It's generally best to avoid using
+ *     mutable objects as elements at all, as many users may expect your "immutable" object to be
+ *     <i>deeply</i> immutable.
  * </ul>
  *
  * <h4>Performance notes</h4>
  *
  * <ul>
+ * <li>Implementations can be generally assumed to prioritize memory efficiency, then speed of
+ *     access, and lastly speed of creation.
  * <li>The {@code copyOf} methods will sometimes recognize that the actual copy operation is
  *     unnecessary; for example, {@code copyOf(copyOf(anArrayList))} should copy the data only once.
  *     This reduces the expense of habitually making defensive copies at API boundaries. However,
- *     the precise conditions for skipping the copy are not contractually guaranteed.
- * <li>Implementations can be generally assumed to prioritize memory efficiency, then speed of
- *     access, then speed of creation.
+ *     the precise conditions for skipping the copy operation are undefined.
+ * <li><b>Warning:</b> a view collection such as {@link ImmutableMap#keySet} or {@link
+ *     ImmutableList#subList} may retain a reference to the entire data set, preventing it from
+ *     being garbage collected. If some of the data is no longer reachable through other means, this
+ *     constitutes a memory leak. Pass the view collection to the appropriate {@code copyOf} method
+ *     to obtain a correctly-sized copy.
  * <li>The performance of using the associated {@code Builder} class can be assumed to be
  *     no worse, and possibly better, than creating a mutable collection and copying it.
  * <li>Implementations generally do not cache hash codes. If your element or key type has a slow
@@ -129,17 +142,16 @@ import javax.annotation.Nullable;
  * <h3>See also</h3>
  *
  * <p>See the Guava User Guide article on <a href=
- * "http://code.google.com/p/guava-libraries/wiki/ImmutableCollectionsExplained">
+ * "https://github.com/google/guava/wiki/ImmutableCollectionsExplained">
  * immutable collections</a>.
  *
- * @since 2.0 (imported from Google Collections Library)
+ * @since 2.0
  */
 @GwtCompatible(emulated = true)
 @SuppressWarnings("serial") // we're overriding default serialization
 // TODO(kevinb): I think we should push everything down to "BaseImmutableCollection" or something,
 // just to do everything we can to emphasize the "practically an interface" nature of this class.
-public abstract class ImmutableCollection<E> extends AbstractCollection<E>
-    implements Serializable {
+public abstract class ImmutableCollection<E> extends AbstractCollection<E> implements Serializable {
 
   ImmutableCollection() {}
 
@@ -160,6 +172,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
     return result;
   }
 
+  @CanIgnoreReturnValue
   @Override
   public final <T> T[] toArray(T[] other) {
     checkNotNull(other);
@@ -182,6 +195,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
    * @throws UnsupportedOperationException always
    * @deprecated Unsupported operation.
    */
+  @CanIgnoreReturnValue
   @Deprecated
   @Override
   public final boolean add(E e) {
@@ -194,6 +208,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
    * @throws UnsupportedOperationException always
    * @deprecated Unsupported operation.
    */
+  @CanIgnoreReturnValue
   @Deprecated
   @Override
   public final boolean remove(Object object) {
@@ -206,6 +221,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
    * @throws UnsupportedOperationException always
    * @deprecated Unsupported operation.
    */
+  @CanIgnoreReturnValue
   @Deprecated
   @Override
   public final boolean addAll(Collection<? extends E> newElements) {
@@ -218,6 +234,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
    * @throws UnsupportedOperationException always
    * @deprecated Unsupported operation.
    */
+  @CanIgnoreReturnValue
   @Deprecated
   @Override
   public final boolean removeAll(Collection<?> oldElements) {
@@ -230,6 +247,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
    * @throws UnsupportedOperationException always
    * @deprecated Unsupported operation.
    */
+  @CanIgnoreReturnValue
   @Deprecated
   @Override
   public final boolean retainAll(Collection<?> elementsToKeep) {
@@ -248,12 +266,6 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
     throw new UnsupportedOperationException();
   }
 
-  /*
-   * TODO(kevinb): Restructure code so ImmutableList doesn't contain this
-   * variable, which it doesn't use.
-   */
-  private transient ImmutableList<E> asList;
-
   /**
    * Returns an {@code ImmutableList} containing the same elements, in the same order, as this
    * collection.
@@ -265,11 +277,6 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
    * @since 2.0
    */
   public ImmutableList<E> asList() {
-    ImmutableList<E> list = asList;
-    return (list == null) ? (asList = createAsList()) : list;
-  }
-
-  ImmutableList<E> createAsList() {
     switch (size()) {
       case 0:
         return ImmutableList.of();
@@ -287,11 +294,12 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
    * memory leaks.
    */
   abstract boolean isPartialView();
-  
+
   /**
    * Copies the contents of this immutable collection into the specified array at the specified
    * offset.  Returns {@code offset + size()}.
    */
+  @CanIgnoreReturnValue
   int copyIntoArray(Object[] dst, int offset) {
     for (E e : this) {
       dst[offset++] = e;
@@ -328,8 +336,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
       return newCapacity;
     }
 
-    Builder() {
-    }
+    Builder() {}
 
     /**
      * Adds {@code element} to the {@code ImmutableCollection} being built.
@@ -341,6 +348,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
      * @return this {@code Builder} instance
      * @throws NullPointerException if {@code element} is null
      */
+    @CanIgnoreReturnValue
     public abstract Builder<E> add(E element);
 
     /**
@@ -355,6 +363,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
      * @throws NullPointerException if {@code elements} is null or contains a
      *     null element
      */
+    @CanIgnoreReturnValue
     public Builder<E> add(E... elements) {
       for (E element : elements) {
         add(element);
@@ -374,6 +383,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
      * @throws NullPointerException if {@code elements} is null or contains a
      *     null element
      */
+    @CanIgnoreReturnValue
     public Builder<E> addAll(Iterable<? extends E> elements) {
       for (E element : elements) {
         add(element);
@@ -393,6 +403,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
      * @throws NullPointerException if {@code elements} is null or contains a
      *     null element
      */
+    @CanIgnoreReturnValue
     public Builder<E> addAll(Iterator<? extends E> elements) {
       while (elements.hasNext()) {
         add(elements.next());
@@ -409,28 +420,30 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
      */
     public abstract ImmutableCollection<E> build();
   }
-  
+
   abstract static class ArrayBasedBuilder<E> extends ImmutableCollection.Builder<E> {
     Object[] contents;
     int size;
-    
+
     ArrayBasedBuilder(int initialCapacity) {
       checkNonnegative(initialCapacity, "initialCapacity");
       this.contents = new Object[initialCapacity];
       this.size = 0;
     }
-    
+
     /**
      * Expand the absolute capacity of the builder so it can accept at least
      * the specified number of elements without being resized.
      */
     private void ensureCapacity(int minCapacity) {
       if (contents.length < minCapacity) {
-        this.contents = ObjectArrays.arraysCopyOf(
-            this.contents, expandedCapacity(contents.length, minCapacity));
+        this.contents =
+            ObjectArrays.arraysCopyOf(
+                this.contents, expandedCapacity(contents.length, minCapacity));
       }
     }
 
+    @CanIgnoreReturnValue
     @Override
     public ArrayBasedBuilder<E> add(E element) {
       checkNotNull(element);
@@ -439,6 +452,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
       return this;
     }
 
+    @CanIgnoreReturnValue
     @Override
     public Builder<E> add(E... elements) {
       checkElementsNotNull(elements);
@@ -448,6 +462,7 @@ public abstract class ImmutableCollection<E> extends AbstractCollection<E>
       return this;
     }
 
+    @CanIgnoreReturnValue
     @Override
     public Builder<E> addAll(Iterable<? extends E> elements) {
       if (elements instanceof Collection) {

@@ -20,13 +20,11 @@ import static com.google.common.io.SourceSinkFactory.CharSinkFactory;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-
-import junit.framework.TestSuite;
-
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Method;
 import java.util.Map;
+import junit.framework.TestSuite;
 
 /**
  * A generator of {@code TestSuite} instances for testing {@code CharSink} implementations.
@@ -34,6 +32,7 @@ import java.util.Map;
  *
  * @author Colin Decker
  */
+@AndroidIncompatible // Android doesn't understand tests that lack default constructors.
 public class CharSinkTester extends SourceSinkTester<CharSink, String, CharSinkFactory> {
 
   private static final ImmutableList<Method> testMethods

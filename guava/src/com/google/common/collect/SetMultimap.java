@@ -17,11 +17,10 @@
 package com.google.common.collect;
 
 import com.google.common.annotations.GwtCompatible;
-
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-
 import javax.annotation.Nullable;
 
 /**
@@ -37,19 +36,19 @@ import javax.annotation.Nullable;
  * <p>If the values corresponding to a single key should be ordered according to
  * a {@link java.util.Comparator} (or the natural order), see the
  * {@link SortedSetMultimap} subinterface.
- * 
+ *
  * <p>Since the value collections are sets, the behavior of a {@code SetMultimap}
- * is not specified if key <em>or value</em> objects already present in the 
- * multimap change in a manner that affects {@code equals} comparisons.  
- * Use caution if mutable objects are used as keys or values in a 
+ * is not specified if key <em>or value</em> objects already present in the
+ * multimap change in a manner that affects {@code equals} comparisons.
+ * Use caution if mutable objects are used as keys or values in a
  * {@code SetMultimap}.
  *
  * <p>See the Guava User Guide article on <a href=
- * "http://code.google.com/p/guava-libraries/wiki/NewCollectionTypesExplained#Multimap">
+ * "https://github.com/google/guava/wiki/NewCollectionTypesExplained#multimap">
  * {@code Multimap}</a>.
  *
  * @author Jared Levy
- * @since 2.0 (imported from Google Collections Library)
+ * @since 2.0
  */
 @GwtCompatible
 public interface SetMultimap<K, V> extends Multimap<K, V> {
@@ -70,6 +69,7 @@ public interface SetMultimap<K, V> extends Multimap<K, V> {
    * method returns a {@link Set}, instead of the {@link java.util.Collection}
    * specified in the {@link Multimap} interface.
    */
+  @CanIgnoreReturnValue
   @Override
   Set<V> removeAll(@Nullable Object key);
 
@@ -82,6 +82,7 @@ public interface SetMultimap<K, V> extends Multimap<K, V> {
    *
    * <p>Any duplicates in {@code values} will be stored in the multimap once.
    */
+  @CanIgnoreReturnValue
   @Override
   Set<V> replaceValues(K key, Iterable<? extends V> values);
 

@@ -16,6 +16,8 @@
 
 package com.google.common.io;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,6 +74,7 @@ public class CountingInputStreamTest extends IoTestCase {
     assertEquals(20, counter.getCount());
   }
 
+  @SuppressWarnings("CheckReturnValue") // calling read() to skip a byte
   public void testMark() throws Exception {
     assertTrue(counter.markSupported());
     assertEquals(10, counter.read(new byte[10]));
@@ -84,16 +87,16 @@ public class CountingInputStreamTest extends IoTestCase {
     assertEquals(10, counter.skip(100));
     assertEquals(20, counter.getCount());
   }
-  
+
   public void testMarkNotSet() {
     try {
       counter.reset();
       fail();
     } catch (IOException expected) {
-      assertEquals("Mark not set", expected.getMessage());
+      assertThat(expected).hasMessage("Mark not set");
     }
   }
-  
+
   public void testMarkNotSupported() {
     counter = new CountingInputStream(new UnmarkableInputStream());
 
@@ -101,19 +104,19 @@ public class CountingInputStreamTest extends IoTestCase {
       counter.reset();
       fail();
     } catch (IOException expected) {
-      assertEquals("Mark not supported", expected.getMessage());
+      assertThat(expected).hasMessage("Mark not supported");
     }
   }
-  
+
   private static class UnmarkableInputStream extends InputStream {
     @Override
     public int read() throws IOException {
       return 0;
     }
-    
+
     @Override
     public boolean markSupported() {
       return false;
-    }    
+    }
   }
 }

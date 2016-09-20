@@ -21,14 +21,12 @@ import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.testing.Helpers;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.testing.SerializableTester;
-
-import junit.framework.TestCase;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import junit.framework.TestCase;
 
 /**
  * Unit test for {@link Booleans}.
@@ -123,7 +121,6 @@ public class BooleansTest extends TestCase {
         Booleans.ensureCapacity(new boolean[] {true}, 2, 1)));
   }
 
-  @SuppressWarnings("CheckReturnValue")
   public void testEnsureCapacity_fail() {
     try {
       Booleans.ensureCapacity(ARRAY_FALSE, -1, 1);
@@ -161,7 +158,7 @@ public class BooleansTest extends TestCase {
     Helpers.testComparator(comparator, ordered);
   }
 
-  @GwtIncompatible("SerializableTester")
+  @GwtIncompatible // SerializableTester
   public void testLexicographicalComparatorSerializable() {
     Comparator<boolean[]> comparator = Booleans.lexicographicalComparator();
     assertSame(comparator, SerializableTester.reserialize(comparator));
@@ -203,7 +200,6 @@ public class BooleansTest extends TestCase {
     }
   }
 
-  @SuppressWarnings("CheckReturnValue")
   public void testToArray_withNull() {
     List<Boolean> list = Arrays.asList(false, true, null);
     try {
@@ -225,7 +221,7 @@ public class BooleansTest extends TestCase {
   }
 
   public void testAsListIndexOf() {
-    assertEquals(-1, Booleans.asList(EMPTY).indexOf("wrong type"));
+    assertEquals(-1, Booleans.asList(EMPTY).indexOf((Object) "wrong type"));
     assertEquals(-1, Booleans.asList(EMPTY).indexOf(true));
     assertEquals(-1, Booleans.asList(ARRAY_FALSE).indexOf(true));
     assertEquals(0, Booleans.asList(ARRAY_FALSE).indexOf(false));
@@ -233,15 +229,15 @@ public class BooleansTest extends TestCase {
   }
 
   public void testAsListLastIndexOf() {
-    assertEquals(-1, Booleans.asList(EMPTY).indexOf("wrong type"));
-    assertEquals(-1, Booleans.asList(EMPTY).indexOf(true));
+    assertEquals(-1, Booleans.asList(EMPTY).lastIndexOf((Object) "wrong type"));
+    assertEquals(-1, Booleans.asList(EMPTY).lastIndexOf(true));
     assertEquals(-1, Booleans.asList(ARRAY_FALSE).lastIndexOf(true));
     assertEquals(1, Booleans.asList(ARRAY_FALSE_TRUE).lastIndexOf(true));
     assertEquals(1, Booleans.asList(ARRAY_FALSE_FALSE).lastIndexOf(false));
   }
 
   public void testAsListContains() {
-    assertFalse(Booleans.asList(EMPTY).contains("wrong type"));
+    assertFalse(Booleans.asList(EMPTY).contains((Object) "wrong type"));
     assertFalse(Booleans.asList(EMPTY).contains(true));
     assertFalse(Booleans.asList(ARRAY_FALSE).contains(true));
     assertTrue(Booleans.asList(ARRAY_TRUE).contains(true));
@@ -298,7 +294,7 @@ public class BooleansTest extends TestCase {
     assertEquals(1, Booleans.countTrue(false, false, true, false, false));
   }
 
-  @GwtIncompatible("NullPointerTester")
+  @GwtIncompatible // NullPointerTester
   public void testNulls() {
     new NullPointerTester().testAllPublicStaticMethods(Booleans.class);
   }

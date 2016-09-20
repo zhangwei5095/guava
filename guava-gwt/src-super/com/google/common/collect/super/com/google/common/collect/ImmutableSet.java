@@ -26,24 +26,23 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * GWT emulated version of {@link ImmutableSet}.  For the unsorted sets, they
- * are thin wrapper around {@link java.util.Collections#emptySet()}, {@link
- * Collections#singleton(Object)} and {@link java.util.LinkedHashSet} for
- * empty, singleton and regular sets respectively.  For the sorted sets, it's
- * a thin wrapper around {@link java.util.TreeSet}.
+ * GWT emulated version of {@link com.google.common.collect.ImmutableSet}. For the unsorted sets,
+ * they are thin wrapper around {@link java.util.Collections#emptySet()}, {@link
+ * Collections#singleton(Object)} and {@link java.util.LinkedHashSet} for empty, singleton and
+ * regular sets respectively. For the sorted sets, it's a thin wrapper around {@link
+ * java.util.TreeSet}.
  *
  * @see ImmutableSortedSet
- *
  * @author Hayward Chan
  */
-@SuppressWarnings("serial")  // Serialization only done in GWT.
+@SuppressWarnings("serial") // Serialization only done in GWT.
 public abstract class ImmutableSet<E> extends ImmutableCollection<E> implements Set<E> {
   ImmutableSet() {}
 
   // Casting to any type is safe because the set will never hold any elements.
   @SuppressWarnings({"unchecked"})
   public static <E> ImmutableSet<E> of() {
-    return (ImmutableSet<E>) EmptyImmutableSet.INSTANCE;
+    return (ImmutableSet<E>) RegularImmutableSet.EMPTY;
   }
 
   public static <E> ImmutableSet<E> of(E element) {
@@ -163,6 +162,35 @@ public abstract class ImmutableSet<E> extends ImmutableCollection<E> implements 
     return Sets.hashCodeImpl(this);
   }
 
+  // This declaration is needed to make Set.iterator() and
+  // ImmutableCollection.iterator() appear consistent to javac's type inference.
+  @Override
+  public abstract UnmodifiableIterator<E> iterator();
+
+  abstract static class Indexed<E> extends ImmutableSet<E> {
+    abstract E get(int index);
+
+    @Override
+    public UnmodifiableIterator<E> iterator() {
+      return asList().iterator();
+    }
+
+    @Override
+    ImmutableList<E> createAsList() {
+      return new ImmutableAsList<E>() {
+        @Override
+        public E get(int index) {
+          return Indexed.this.get(index);
+        }
+
+        @Override
+        Indexed<E> delegateCollection() {
+          return Indexed.this;
+        }
+      };
+    }
+  }
+
   public static <E> Builder<E> builder() {
     return new Builder<E>();
   }
@@ -174,7 +202,7 @@ public abstract class ImmutableSet<E> extends ImmutableCollection<E> implements 
     public Builder() {
       this.contents = Lists.newArrayList();
     }
-    
+
     Builder(int initialCapacity) {
       this.contents = Lists.newArrayListWithCapacity(initialCapacity);
     }

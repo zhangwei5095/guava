@@ -19,11 +19,9 @@ package com.google.common.base;
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.ImmutableMap;
-
-import junit.framework.TestCase;
-
 import java.util.Arrays;
 import java.util.Map;
+import junit.framework.TestCase;
 
 /**
  * Tests for {@link Objects#toStringHelper(Object)}.
@@ -33,7 +31,7 @@ import java.util.Map;
 @GwtCompatible
 public class ToStringHelperTest extends TestCase {
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testConstructor_instance() {
     String toTest = Objects.toStringHelper(this).toString();
     assertEquals("ToStringHelperTest{}", toTest);
@@ -44,7 +42,7 @@ public class ToStringHelperTest extends TestCase {
     assertTrue(toTest, toTest.matches(".*\\{\\}"));
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testConstructor_innerClass() {
     String toTest = Objects.toStringHelper(new TestClass()).toString();
     assertEquals("TestClass{}", toTest);
@@ -55,7 +53,7 @@ public class ToStringHelperTest extends TestCase {
     assertTrue(toTest, toTest.matches(".*\\{\\}"));
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testConstructor_anonymousClass() {
     String toTest = Objects.toStringHelper(new Object() {}).toString();
     assertEquals("{}", toTest);
@@ -66,7 +64,7 @@ public class ToStringHelperTest extends TestCase {
     assertTrue(toTest, toTest.matches(".*\\{\\}"));
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testConstructor_classObject() {
     String toTest = Objects.toStringHelper(TestClass.class).toString();
     assertEquals("TestClass{}", toTest);
@@ -82,7 +80,7 @@ public class ToStringHelperTest extends TestCase {
     assertEquals("FooBar{}", toTest);
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToStringHelper_localInnerClass() {
     // Local inner classes have names ending like "Outer.$1Inner"
     class LocalInnerClass {}
@@ -96,7 +94,7 @@ public class ToStringHelperTest extends TestCase {
     assertTrue(toTest, toTest.matches(".*\\{\\}"));
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToStringHelper_localInnerNestedClass() {
     class LocalInnerClass {
       class LocalInnerNestedClass {}
@@ -115,7 +113,7 @@ public class ToStringHelperTest extends TestCase {
     assertTrue(toTest, toTest.matches(".*\\{\\}"));
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToStringHelper_moreThanNineAnonymousClasses() {
     // The nth anonymous class has a name ending like "Outer.$n"
     Object o1 = new Object() {};
@@ -149,7 +147,7 @@ public class ToStringHelperTest extends TestCase {
   }
 
   // all remaining test are on an inner class with various fields
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToString_oneField() {
     String toTest = Objects.toStringHelper(new TestClass())
         .add("field1", "Hello")
@@ -157,7 +155,7 @@ public class ToStringHelperTest extends TestCase {
     assertEquals("TestClass{field1=Hello}", toTest);
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToString_oneIntegerField() {
     String toTest = Objects.toStringHelper(new TestClass())
         .add("field1", new Integer(42))
@@ -165,7 +163,7 @@ public class ToStringHelperTest extends TestCase {
     assertEquals("TestClass{field1=42}", toTest);
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToString_nullInteger() {
     String toTest = Objects.toStringHelper(new TestClass())
         .add("field1", (Integer) null)
@@ -194,7 +192,7 @@ public class ToStringHelperTest extends TestCase {
     assertTrue(toTest, toTest.matches(".*\\{field1\\=null\\}"));
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToString_complexFields() {
 
     Map<String, Integer> map = ImmutableMap.<String, Integer>builder()
@@ -242,7 +240,7 @@ public class ToStringHelperTest extends TestCase {
     }
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToString_addWithNullValue() {
     final String result = Objects.toStringHelper(new TestClass())
         .add("Hello", null)
@@ -258,7 +256,7 @@ public class ToStringHelperTest extends TestCase {
     assertTrue(result, result.matches(".*\\{Hello\\=null\\}"));
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToString_ToStringTwice() {
     Objects.ToStringHelper helper = Objects.toStringHelper(new TestClass())
         .add("field1", 1)
@@ -276,7 +274,7 @@ public class ToStringHelperTest extends TestCase {
     assertEquals(expected2, helper.toString());
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToString_addValue() {
     String toTest = Objects.toStringHelper(new TestClass())
         .add("field1", 1)
@@ -301,7 +299,7 @@ public class ToStringHelperTest extends TestCase {
     assertTrue(toTest, toTest.matches(expected));
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToString_addValueWithNullValue() {
     final String result = Objects.toStringHelper(new TestClass())
         .addValue(null)
@@ -324,7 +322,7 @@ public class ToStringHelperTest extends TestCase {
     assertTrue(result, result.matches(expected));
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToStringOmitNullValues_oneField() {
     String toTest = Objects.toStringHelper(new TestClass())
         .omitNullValues()
@@ -333,7 +331,7 @@ public class ToStringHelperTest extends TestCase {
     assertEquals("TestClass{}", toTest);
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToStringOmitNullValues_manyFieldsFirstNull() {
     String toTest = Objects.toStringHelper(new TestClass())
         .omitNullValues()
@@ -344,7 +342,7 @@ public class ToStringHelperTest extends TestCase {
     assertEquals("TestClass{field2=Googley, field3=World}", toTest);
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToStringOmitNullValues_manyFieldsOmitAfterNull() {
     String toTest = Objects.toStringHelper(new TestClass())
         .add("field1", null)
@@ -355,7 +353,7 @@ public class ToStringHelperTest extends TestCase {
     assertEquals("TestClass{field2=Googley, field3=World}", toTest);
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToStringOmitNullValues_manyFieldsLastNull() {
     String toTest = Objects.toStringHelper(new TestClass())
         .omitNullValues()
@@ -366,7 +364,7 @@ public class ToStringHelperTest extends TestCase {
     assertEquals("TestClass{field1=Hello, field2=Googley}", toTest);
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToStringOmitNullValues_oneValue() {
     String toTest = Objects.toStringHelper(new TestClass())
         .omitNullValues()
@@ -375,7 +373,7 @@ public class ToStringHelperTest extends TestCase {
     assertEquals("TestClass{}", toTest);
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToStringOmitNullValues_manyValuesFirstNull() {
     String toTest = Objects.toStringHelper(new TestClass())
         .omitNullValues()
@@ -386,7 +384,7 @@ public class ToStringHelperTest extends TestCase {
     assertEquals("TestClass{Googley, World}", toTest);
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToStringOmitNullValues_manyValuesLastNull() {
     String toTest = Objects.toStringHelper(new TestClass())
         .omitNullValues()
@@ -397,7 +395,7 @@ public class ToStringHelperTest extends TestCase {
     assertEquals("TestClass{Hello, Googley}", toTest);
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToStringOmitNullValues_differentOrder() {
     String expected = "TestClass{field1=Hello, field2=Googley, field3=World}";
     String toTest1 = Objects.toStringHelper(new TestClass())
@@ -416,7 +414,7 @@ public class ToStringHelperTest extends TestCase {
     assertEquals(expected, toTest2);
   }
 
-  @GwtIncompatible("Class names are obfuscated in GWT")
+  @GwtIncompatible // Class names are obfuscated in GWT
   public void testToStringOmitNullValues_canBeCalledManyTimes() {
     String toTest = Objects.toStringHelper(new TestClass())
         .omitNullValues()

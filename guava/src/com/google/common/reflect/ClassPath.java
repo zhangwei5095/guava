@@ -1,17 +1,15 @@
 /*
  * Copyright (C) 2012 The Guava Authors
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 
 package com.google.common.reflect;
@@ -24,34 +22,38 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
-
+import com.google.common.io.ByteSource;
+import com.google.common.io.CharSource;
+import com.google.common.io.Resources;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Collection;
+import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.logging.Logger;
-
 import javax.annotation.Nullable;
 
 /**
  * Scans the source of a {@link ClassLoader} and finds all loadable classes and resources.
+ *
+ * <p><b>Warning:</b> Currently only {@link URLClassLoader} and only {@code file://} urls are
+ * supported.
  *
  * @author Ben Yu
  * @since 14.0
@@ -60,11 +62,13 @@ import javax.annotation.Nullable;
 public final class ClassPath {
   private static final Logger logger = Logger.getLogger(ClassPath.class.getName());
 
-  private static final Predicate<ClassInfo> IS_TOP_LEVEL = new Predicate<ClassInfo>() {
-    @Override public boolean apply(ClassInfo info) {
-      return info.className.indexOf('$') == -1;
-    }
-  };
+  private static final Predicate<ClassInfo> IS_TOP_LEVEL =
+      new Predicate<ClassInfo>() {
+        @Override
+        public boolean apply(ClassInfo info) {
+          return info.className.indexOf('$') == -1;
+        }
+      };
 
   /** Separator for the Class-Path manifest attribute value in jar files. */
   private static final Splitter CLASS_PATH_ATTRIBUTE_SEPARATOR =
@@ -82,16 +86,15 @@ public final class ClassPath {
    * Returns a {@code ClassPath} representing all classes and resources loadable from {@code
    * classloader} and its parent class loaders.
    *
-   * <p>Currently only {@link URLClassLoader} and only {@code file://} urls are supported.
+   * <p><b>Warning:</b> Currently only {@link URLClassLoader} and only {@code file://} urls are
+   * supported.
    *
    * @throws IOException if the attempt to read class path resources (jar files or directories)
-   *         failed.
+   *     failed.
    */
   public static ClassPath from(ClassLoader classloader) throws IOException {
-    Scanner scanner = new Scanner();
-    for (Map.Entry<File, ClassLoader> entry : getClassPathEntries(classloader).entrySet()) {
-      scanner.scan(entry.getKey(), entry.getValue());
-    }
+    DefaultScanner scanner = new DefaultScanner();
+    scanner.scan(classloader);
     return new ClassPath(scanner.getResources());
   }
 
@@ -154,40 +157,59 @@ public final class ClassPath {
   @Beta
   public static class ResourceInfo {
     private final String resourceName;
-    private final ImmutableList<URL> urls;
 
     final ClassLoader loader;
 
-    static ResourceInfo of(String resourceName, Collection<URL> urls, ClassLoader loader) {
+    static ResourceInfo of(String resourceName, ClassLoader loader) {
       if (resourceName.endsWith(CLASS_FILE_NAME_EXTENSION)) {
-        return new ClassInfo(resourceName, urls, loader);
+        return new ClassInfo(resourceName, loader);
       } else {
-        return new ResourceInfo(resourceName, urls, loader);
+        return new ResourceInfo(resourceName, loader);
       }
     }
 
-    ResourceInfo(String resourceName, Collection<URL> urls, ClassLoader loader) {
+    ResourceInfo(String resourceName, ClassLoader loader) {
       this.resourceName = checkNotNull(resourceName);
       this.loader = checkNotNull(loader);
-      this.urls = ImmutableList.copyOf(urls);
     }
 
     /**
      * Returns the url identifying the resource.
      *
      * <p>See {@link ClassLoader#getResource}
+     *
+     * @throws NoSuchElementException if the resource cannot be loaded through the class loader,
+     *     despite physically existing in the class path.
      */
     public final URL url() {
-      return urls.get(0);
+      URL url = loader.getResource(resourceName);
+      if (url == null) {
+        throw new NoSuchElementException(resourceName);
+      }
+      return url;
     }
 
     /**
-     * Returns all the urls for this resource.
+     * Returns a {@link ByteSource} view of the resource from which its bytes can be read.
      *
-     * <p>See {@link ClassLoader#getResources}
+     * @throws NoSuchElementException if the resource cannot be loaded through the class loader,
+     *     despite physically existing in the class path.
+     * @since 20.0
      */
-    final ImmutableList<URL> urls() {
-      return urls;
+    public final ByteSource asByteSource() {
+      return Resources.asByteSource(url());
+    }
+
+    /**
+     * Returns a {@link CharSource} view of the resource from which its bytes can be read as
+     * characters decoded with the given {@code charset}.
+     *
+     * @throws NoSuchElementException if the resource cannot be loaded through the class loader,
+     *     despite physically existing in the class path.
+     * @since 20.0
+     */
+    public final CharSource asCharSource(Charset charset) {
+      return Resources.asCharSource(url(), charset);
     }
 
     /** Returns the fully qualified name of the resource. Such as "com/mycomp/foo/bar.txt". */
@@ -195,21 +217,23 @@ public final class ClassPath {
       return resourceName;
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
       return resourceName.hashCode();
     }
 
-    @Override public boolean equals(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
       if (obj instanceof ResourceInfo) {
         ResourceInfo that = (ResourceInfo) obj;
-        return resourceName.equals(that.resourceName)
-            && loader == that.loader;
+        return resourceName.equals(that.resourceName) && loader == that.loader;
       }
       return false;
     }
 
     // Do not change this arbitrarily. We rely on it for sorting ResourceInfo.
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return resourceName;
     }
   }
@@ -223,8 +247,8 @@ public final class ClassPath {
   public static final class ClassInfo extends ResourceInfo {
     private final String className;
 
-    ClassInfo(String resourceName, Collection<URL> urls, ClassLoader loader) {
-      super(resourceName, urls, loader);
+    ClassInfo(String resourceName, ClassLoader loader) {
+      super(resourceName, loader);
       this.className = getClassName(resourceName);
     }
 
@@ -250,7 +274,7 @@ public final class ClassPath {
         String innerClassName = className.substring(lastDollarSign + 1);
         // local and anonymous classes are prefixed with number (1,2,3...), anonymous classes are
         // entirely numeric whereas local classes have the user supplied name as a suffix
-        return CharMatcher.DIGIT.trimLeadingFrom(innerClassName);
+        return CharMatcher.digit().trimLeadingFrom(innerClassName);
       }
       String packageName = getPackageName();
       if (packageName.isEmpty()) {
@@ -275,7 +299,7 @@ public final class ClassPath {
      * Loads (but doesn't link or initialize) the class.
      *
      * @throws LinkageError when there were errors in loading classes that this class depends on.
-     *         For example, {@link NoClassDefFoundError}.
+     *     For example, {@link NoClassDefFoundError}.
      */
     public Class<?> load() {
       try {
@@ -286,101 +310,50 @@ public final class ClassPath {
       }
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return className;
     }
   }
 
-  @VisibleForTesting static ImmutableMap<File, ClassLoader> getClassPathEntries(
-      ClassLoader classloader) {
-    LinkedHashMap<File, ClassLoader> entries = Maps.newLinkedHashMap();
-    // Search parent first, since it's the order ClassLoader#loadClass() uses.
-    ClassLoader parent = classloader.getParent();
-    if (parent != null) {
-      entries.putAll(getClassPathEntries(parent));
-    }
-    if (classloader instanceof URLClassLoader) {
-      URLClassLoader urlClassLoader = (URLClassLoader) classloader;
-      for (URL entry : urlClassLoader.getURLs()) {
-        if (entry.getProtocol().equals("file")) {
-          File file = new File(entry.getFile());
-          if (!entries.containsKey(file)) {
-            entries.put(file, classloader);
-          }
-        }
-      }
-    }
-    return ImmutableMap.copyOf(entries);
-  }
-
-  @VisibleForTesting static final class Scanner {
-    private final Map<ClassLoader, Multimap<String, URL>> resources = Maps.newLinkedHashMap();
+  /**
+   * Abstract class that scans through the class path represented by a {@link ClassLoader} and calls
+   * {@link #scanDirectory} and {@link #scanJarFile} for directories and jar files on the class path
+   * respectively.
+   */
+  abstract static class Scanner {
 
     // We only scan each file once independent of the classloader that resource might be associated
     // with.
     private final Set<File> scannedUris = Sets.newHashSet();
 
-    ImmutableSet<ResourceInfo> getResources() {
-      ImmutableSet.Builder<ResourceInfo> builder = ImmutableSet.builder();
-      for (Map.Entry<ClassLoader, Multimap<String, URL>> entry : resources.entrySet()) {
-        ClassLoader loader = entry.getKey();
-        for (Map.Entry<String, Collection<URL>> foo : entry.getValue().asMap().entrySet()) {
-          builder.add(ResourceInfo.of(foo.getKey(), foo.getValue(), loader));
-        }
+    public final void scan(ClassLoader classloader) throws IOException {
+      for (Map.Entry<File, ClassLoader> entry : getClassPathEntries(classloader).entrySet()) {
+        scan(entry.getKey(), entry.getValue());
       }
-      return builder.build();
     }
 
-    void scan(File file, ClassLoader classloader) throws IOException {
-      if (scannedUris.add(file)) {
-        if (!resources.containsKey(classloader)) {
-          resources.put(classloader,
-              MultimapBuilder.treeKeys().arrayListValues().<String, URL>build());
-        }
+    /** Called when a directory is scanned for resource files. */
+    protected abstract void scanDirectory(ClassLoader loader, File directory) throws IOException;
+
+    /** Called when a jar file is scanned for resource entries. */
+    protected abstract void scanJarFile(ClassLoader loader, JarFile file) throws IOException;
+
+    @VisibleForTesting
+    final void scan(File file, ClassLoader classloader) throws IOException {
+      if (scannedUris.add(file.getCanonicalFile())) {
         scanFrom(file, classloader);
       }
     }
 
-    @VisibleForTesting void scanFrom(File file, ClassLoader classloader)
-        throws IOException {
+    private void scanFrom(File file, ClassLoader classloader) throws IOException {
       if (!file.exists()) {
         return;
       }
       if (file.isDirectory()) {
-        scanDirectory(file, classloader);
+        scanDirectory(classloader, file);
       } else {
         scanJar(file, classloader);
-      }
-    }
-
-    private void scanDirectory(File directory, ClassLoader classloader) throws IOException {
-      scanDirectory(directory, classloader, "");
-    }
-
-    private void scanDirectory(
-        File directory, ClassLoader classloader, String packagePrefix) throws IOException {
-      File canonical = directory.getCanonicalFile();
-      if (!scannedUris.add(canonical)) {
-        // The filesystem we are exploring is not a tree, we must have chased a symlink at some
-        // point.  Just return early to avoid redundant work (or getting stuck in cycles).
-        return;
-      }
-      File[] files = directory.listFiles();
-      if (files == null) {
-        logger.warning("Cannot read directory " + directory);
-        // IO error, just skip the directory
-        return;
-      }
-      for (File f : files) {
-        String name = f.getName();
-        if (f.isDirectory()) {
-          scanDirectory(f, classloader, packagePrefix + name + "/");
-        } else {
-          String resourceName = packagePrefix + name;
-          if (!resourceName.equals(JarFile.MANIFEST_NAME)) {
-            resources.get(classloader).put(resourceName, f.toURI().toURL());
-          }
-        }
       }
     }
 
@@ -396,21 +369,12 @@ public final class ClassPath {
         for (File path : getClassPathFromManifest(file, jarFile.getManifest())) {
           scan(path, classloader);
         }
-        String entryUrlPrefix = file.toURI().toURL() + "!/";
-        Enumeration<JarEntry> entries = jarFile.entries();
-        while (entries.hasMoreElements()) {
-          JarEntry entry = entries.nextElement();
-          if (entry.isDirectory() || entry.getName().equals(JarFile.MANIFEST_NAME)) {
-            continue;
-          }
-          String resourceName = entry.getName();
-          URL url = new URL("jar", null, entryUrlPrefix + resourceName);
-          resources.get(classloader).put(resourceName, url);
-        }
+        scanJarFile(classloader, jarFile);
       } finally {
         try {
           jarFile.close();
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
       }
     }
 
@@ -421,14 +385,14 @@ public final class ClassPath {
      * JAR File Specification</a>. If {@code manifest} is null, it means the jar file has no
      * manifest, and an empty set will be returned.
      */
-    @VisibleForTesting static ImmutableSet<File> getClassPathFromManifest(
-        File jarFile, @Nullable Manifest manifest) {
+    @VisibleForTesting
+    static ImmutableSet<File> getClassPathFromManifest(File jarFile, @Nullable Manifest manifest) {
       if (manifest == null) {
         return ImmutableSet.of();
       }
       ImmutableSet.Builder<File> builder = ImmutableSet.builder();
-      String classpathAttribute = manifest.getMainAttributes()
-          .getValue(Attributes.Name.CLASS_PATH.toString());
+      String classpathAttribute =
+          manifest.getMainAttributes().getValue(Attributes.Name.CLASS_PATH.toString());
       if (classpathAttribute != null) {
         for (String path : CLASS_PATH_ATTRIBUTE_SEPARATOR.split(classpathAttribute)) {
           URL url;
@@ -447,19 +411,94 @@ public final class ClassPath {
       return builder.build();
     }
 
+    @VisibleForTesting
+    static ImmutableMap<File, ClassLoader> getClassPathEntries(ClassLoader classloader) {
+      LinkedHashMap<File, ClassLoader> entries = Maps.newLinkedHashMap();
+      // Search parent first, since it's the order ClassLoader#loadClass() uses.
+      ClassLoader parent = classloader.getParent();
+      if (parent != null) {
+        entries.putAll(getClassPathEntries(parent));
+      }
+      if (classloader instanceof URLClassLoader) {
+        URLClassLoader urlClassLoader = (URLClassLoader) classloader;
+        for (URL entry : urlClassLoader.getURLs()) {
+          if (entry.getProtocol().equals("file")) {
+            File file = new File(entry.getFile());
+            if (!entries.containsKey(file)) {
+              entries.put(file, classloader);
+            }
+          }
+        }
+      }
+      return ImmutableMap.copyOf(entries);
+    }
+
     /**
      * Returns the absolute uri of the Class-Path entry value as specified in
      * <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Main_Attributes">
      * JAR File Specification</a>. Even though the specification only talks about relative urls,
      * absolute urls are actually supported too (for example, in Maven surefire plugin).
      */
-    @VisibleForTesting static URL getClassPathEntry(File jarFile, String path)
-        throws MalformedURLException {
+    @VisibleForTesting
+    static URL getClassPathEntry(File jarFile, String path) throws MalformedURLException {
       return new URL(jarFile.toURI().toURL(), path);
     }
   }
 
-  @VisibleForTesting static String getClassName(String filename) {
+  @VisibleForTesting
+  static final class DefaultScanner extends Scanner {
+    private final SetMultimap<ClassLoader, String> resources =
+        MultimapBuilder.hashKeys().linkedHashSetValues().build();
+
+    ImmutableSet<ResourceInfo> getResources() {
+      ImmutableSet.Builder<ResourceInfo> builder = ImmutableSet.builder();
+      for (Map.Entry<ClassLoader, String> entry : resources.entries()) {
+        builder.add(ResourceInfo.of(entry.getValue(), entry.getKey()));
+      }
+      return builder.build();
+    }
+
+    @Override
+    protected void scanJarFile(ClassLoader classloader, JarFile file) {
+      Enumeration<JarEntry> entries = file.entries();
+      while (entries.hasMoreElements()) {
+        JarEntry entry = entries.nextElement();
+        if (entry.isDirectory() || entry.getName().equals(JarFile.MANIFEST_NAME)) {
+          continue;
+        }
+        resources.get(classloader).add(entry.getName());
+      }
+    }
+
+    @Override
+    protected void scanDirectory(ClassLoader classloader, File directory) throws IOException {
+      scanDirectory(directory, classloader, "");
+    }
+
+    private void scanDirectory(File directory, ClassLoader classloader, String packagePrefix)
+        throws IOException {
+      File[] files = directory.listFiles();
+      if (files == null) {
+        logger.warning("Cannot read directory " + directory);
+        // IO error, just skip the directory
+        return;
+      }
+      for (File f : files) {
+        String name = f.getName();
+        if (f.isDirectory()) {
+          scanDirectory(f, classloader, packagePrefix + name + "/");
+        } else {
+          String resourceName = packagePrefix + name;
+          if (!resourceName.equals(JarFile.MANIFEST_NAME)) {
+            resources.get(classloader).add(resourceName);
+          }
+        }
+      }
+    }
+  }
+
+  @VisibleForTesting
+  static String getClassName(String filename) {
     int classNameEnd = filename.length() - CLASS_FILE_NAME_EXTENSION.length();
     return filename.substring(0, classNameEnd).replace('/', '.');
   }

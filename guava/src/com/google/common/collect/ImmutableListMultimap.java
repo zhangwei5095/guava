@@ -19,7 +19,8 @@ package com.google.common.collect;
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
-
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.j2objc.annotations.RetainedWith;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -27,35 +28,21 @@ import java.io.ObjectOutputStream;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map.Entry;
-
 import javax.annotation.Nullable;
 
 /**
- * An immutable {@link ListMultimap} with reliable user-specified key and value
- * iteration order. Does not permit null keys or values.
- *
- * <p>Unlike {@link Multimaps#unmodifiableListMultimap(ListMultimap)}, which is
- * a <i>view</i> of a separate multimap which can still change, an instance of
- * {@code ImmutableListMultimap} contains its own data and will <i>never</i>
- * change. {@code ImmutableListMultimap} is convenient for
- * {@code public static final} multimaps ("constant multimaps") and also lets
- * you easily make a "defensive copy" of a multimap provided to your class by
- * a caller.
- *
- * <p><b>Note:</b> Although this class is not final, it cannot be subclassed as
- * it has no public or protected constructors. Thus, instances of this class
- * are guaranteed to be immutable.
+ * A {@link ListMultimap} whose contents will never change, with many other important properties
+ * detailed at {@link ImmutableCollection}.
  *
  * <p>See the Guava User Guide article on <a href=
- * "http://code.google.com/p/guava-libraries/wiki/ImmutableCollectionsExplained">
+ * "https://github.com/google/guava/wiki/ImmutableCollectionsExplained">
  * immutable collections</a>.
  *
  * @author Jared Levy
- * @since 2.0 (imported from Google Collections Library)
+ * @since 2.0
  */
 @GwtCompatible(serializable = true, emulated = true)
-public class ImmutableListMultimap<K, V>
-    extends ImmutableMultimap<K, V>
+public class ImmutableListMultimap<K, V> extends ImmutableMultimap<K, V>
     implements ListMultimap<K, V> {
 
   /** Returns the empty multimap. */
@@ -69,8 +56,7 @@ public class ImmutableListMultimap<K, V>
    * Returns an immutable multimap containing a single entry.
    */
   public static <K, V> ImmutableListMultimap<K, V> of(K k1, V v1) {
-    ImmutableListMultimap.Builder<K, V> builder
-        = ImmutableListMultimap.builder();
+    ImmutableListMultimap.Builder<K, V> builder = ImmutableListMultimap.builder();
     builder.put(k1, v1);
     return builder.build();
   }
@@ -79,8 +65,7 @@ public class ImmutableListMultimap<K, V>
    * Returns an immutable multimap containing the given entries, in order.
    */
   public static <K, V> ImmutableListMultimap<K, V> of(K k1, V v1, K k2, V v2) {
-    ImmutableListMultimap.Builder<K, V> builder
-        = ImmutableListMultimap.builder();
+    ImmutableListMultimap.Builder<K, V> builder = ImmutableListMultimap.builder();
     builder.put(k1, v1);
     builder.put(k2, v2);
     return builder.build();
@@ -89,10 +74,8 @@ public class ImmutableListMultimap<K, V>
   /**
    * Returns an immutable multimap containing the given entries, in order.
    */
-  public static <K, V> ImmutableListMultimap<K, V> of(
-      K k1, V v1, K k2, V v2, K k3, V v3) {
-    ImmutableListMultimap.Builder<K, V> builder
-        = ImmutableListMultimap.builder();
+  public static <K, V> ImmutableListMultimap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
+    ImmutableListMultimap.Builder<K, V> builder = ImmutableListMultimap.builder();
     builder.put(k1, v1);
     builder.put(k2, v2);
     builder.put(k3, v3);
@@ -104,8 +87,7 @@ public class ImmutableListMultimap<K, V>
    */
   public static <K, V> ImmutableListMultimap<K, V> of(
       K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
-    ImmutableListMultimap.Builder<K, V> builder
-        = ImmutableListMultimap.builder();
+    ImmutableListMultimap.Builder<K, V> builder = ImmutableListMultimap.builder();
     builder.put(k1, v1);
     builder.put(k2, v2);
     builder.put(k3, v3);
@@ -118,8 +100,7 @@ public class ImmutableListMultimap<K, V>
    */
   public static <K, V> ImmutableListMultimap<K, V> of(
       K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
-    ImmutableListMultimap.Builder<K, V> builder
-        = ImmutableListMultimap.builder();
+    ImmutableListMultimap.Builder<K, V> builder = ImmutableListMultimap.builder();
     builder.put(k1, v1);
     builder.put(k2, v2);
     builder.put(k3, v3);
@@ -154,17 +135,18 @@ public class ImmutableListMultimap<K, V>
    * times to build multiple multimaps in series. Each multimap contains the
    * key-value mappings in the previously created multimaps.
    *
-   * @since 2.0 (imported from Google Collections Library)
+   * @since 2.0
    */
-  public static final class Builder<K, V>
-      extends ImmutableMultimap.Builder<K, V> {
+  public static final class Builder<K, V> extends ImmutableMultimap.Builder<K, V> {
     /**
      * Creates a new builder. The returned builder is equivalent to the builder
      * generated by {@link ImmutableListMultimap#builder}.
      */
     public Builder() {}
 
-    @Override public Builder<K, V> put(K key, V value) {
+    @CanIgnoreReturnValue
+    @Override
+    public Builder<K, V> put(K key, V value) {
       super.put(key, value);
       return this;
     }
@@ -174,8 +156,9 @@ public class ImmutableListMultimap<K, V>
      *
      * @since 11.0
      */
-    @Override public Builder<K, V> put(
-        Entry<? extends K, ? extends V> entry) {
+    @CanIgnoreReturnValue
+    @Override
+    public Builder<K, V> put(Entry<? extends K, ? extends V> entry) {
       super.put(entry);
       return this;
     }
@@ -185,25 +168,31 @@ public class ImmutableListMultimap<K, V>
      *
      * @since 19.0
      */
+    @CanIgnoreReturnValue
     @Beta
-    @Override public Builder<K, V> putAll(
-        Iterable<? extends Entry<? extends K, ? extends V>> entries) {
+    @Override
+    public Builder<K, V> putAll(Iterable<? extends Entry<? extends K, ? extends V>> entries) {
       super.putAll(entries);
       return this;
     }
 
-    @Override public Builder<K, V> putAll(K key, Iterable<? extends V> values) {
+    @CanIgnoreReturnValue
+    @Override
+    public Builder<K, V> putAll(K key, Iterable<? extends V> values) {
       super.putAll(key, values);
       return this;
     }
 
-    @Override public Builder<K, V> putAll(K key, V... values) {
+    @CanIgnoreReturnValue
+    @Override
+    public Builder<K, V> putAll(K key, V... values) {
       super.putAll(key, values);
       return this;
     }
 
-    @Override public Builder<K, V> putAll(
-        Multimap<? extends K, ? extends V> multimap) {
+    @CanIgnoreReturnValue
+    @Override
+    public Builder<K, V> putAll(Multimap<? extends K, ? extends V> multimap) {
       super.putAll(multimap);
       return this;
     }
@@ -213,6 +202,7 @@ public class ImmutableListMultimap<K, V>
      *
      * @since 8.0
      */
+    @CanIgnoreReturnValue
     @Override
     public Builder<K, V> orderKeysBy(Comparator<? super K> keyComparator) {
       super.orderKeysBy(keyComparator);
@@ -224,6 +214,7 @@ public class ImmutableListMultimap<K, V>
      *
      * @since 8.0
      */
+    @CanIgnoreReturnValue
     @Override
     public Builder<K, V> orderValuesBy(Comparator<? super V> valueComparator) {
       super.orderValuesBy(valueComparator);
@@ -233,7 +224,8 @@ public class ImmutableListMultimap<K, V>
     /**
      * Returns a newly-created immutable list multimap.
      */
-    @Override public ImmutableListMultimap<K, V> build() {
+    @Override
+    public ImmutableListMultimap<K, V> build() {
       return (ImmutableListMultimap<K, V>) super.build();
     }
   }
@@ -256,11 +248,10 @@ public class ImmutableListMultimap<K, V>
       return of();
     }
 
-    // TODO(user): copy ImmutableSetMultimap by using asList() on the sets
+    // TODO(lowasser): copy ImmutableSetMultimap by using asList() on the sets
     if (multimap instanceof ImmutableListMultimap) {
       @SuppressWarnings("unchecked") // safe since multimap is not writable
-      ImmutableListMultimap<K, V> kvMultimap
-          = (ImmutableListMultimap<K, V>) multimap;
+      ImmutableListMultimap<K, V> kvMultimap = (ImmutableListMultimap<K, V>) multimap;
       if (!kvMultimap.isPartialView()) {
         return kvMultimap;
       }
@@ -270,8 +261,8 @@ public class ImmutableListMultimap<K, V>
         new ImmutableMap.Builder<K, ImmutableList<V>>(multimap.asMap().size());
     int size = 0;
 
-    for (Entry<? extends K, ? extends Collection<? extends V>> entry
-        : multimap.asMap().entrySet()) {
+    for (Entry<? extends K, ? extends Collection<? extends V>> entry :
+        multimap.asMap().entrySet()) {
       ImmutableList<V> list = ImmutableList.copyOf(entry.getValue());
       if (!list.isEmpty()) {
         builder.put(entry.getKey(), list);
@@ -309,12 +300,14 @@ public class ImmutableListMultimap<K, V>
    * returned. The values are in the same order as the parameters used to build
    * this multimap.
    */
-  @Override public ImmutableList<V> get(@Nullable K key) {
+  @Override
+  public ImmutableList<V> get(@Nullable K key) {
     // This cast is safe as its type is known in constructor.
     ImmutableList<V> list = (ImmutableList<V>) map.get(key);
     return (list == null) ? ImmutableList.<V>of() : list;
   }
 
+  @RetainedWith
   private transient ImmutableListMultimap<V, K> inverse;
 
   /**
@@ -349,7 +342,10 @@ public class ImmutableListMultimap<K, V>
    * @throws UnsupportedOperationException always
    * @deprecated Unsupported operation.
    */
-  @Deprecated @Override public ImmutableList<V> removeAll(Object key) {
+  @CanIgnoreReturnValue
+  @Deprecated
+  @Override
+  public ImmutableList<V> removeAll(Object key) {
     throw new UnsupportedOperationException();
   }
 
@@ -359,8 +355,10 @@ public class ImmutableListMultimap<K, V>
    * @throws UnsupportedOperationException always
    * @deprecated Unsupported operation.
    */
-  @Deprecated @Override public ImmutableList<V> replaceValues(
-      K key, Iterable<? extends V> values) {
+  @CanIgnoreReturnValue
+  @Deprecated
+  @Override
+  public ImmutableList<V> replaceValues(K key, Iterable<? extends V> values) {
     throw new UnsupportedOperationException();
   }
 
@@ -368,22 +366,20 @@ public class ImmutableListMultimap<K, V>
    * @serialData number of distinct keys, and then for each distinct key: the
    *     key, the number of values for that key, and the key's values
    */
-  @GwtIncompatible("java.io.ObjectOutputStream")
+  @GwtIncompatible // java.io.ObjectOutputStream
   private void writeObject(ObjectOutputStream stream) throws IOException {
     stream.defaultWriteObject();
     Serialization.writeMultimap(this, stream);
   }
 
-  @GwtIncompatible("java.io.ObjectInputStream")
-  private void readObject(ObjectInputStream stream)
-      throws IOException, ClassNotFoundException {
+  @GwtIncompatible // java.io.ObjectInputStream
+  private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
     stream.defaultReadObject();
     int keyCount = stream.readInt();
     if (keyCount < 0) {
       throw new InvalidObjectException("Invalid key count " + keyCount);
     }
-    ImmutableMap.Builder<Object, ImmutableList<Object>> builder
-        = ImmutableMap.builder();
+    ImmutableMap.Builder<Object, ImmutableList<Object>> builder = ImmutableMap.builder();
     int tmpSize = 0;
 
     for (int i = 0; i < keyCount; i++) {
@@ -405,14 +401,13 @@ public class ImmutableListMultimap<K, V>
     try {
       tmpMap = builder.build();
     } catch (IllegalArgumentException e) {
-      throw (InvalidObjectException)
-          new InvalidObjectException(e.getMessage()).initCause(e);
+      throw (InvalidObjectException) new InvalidObjectException(e.getMessage()).initCause(e);
     }
 
     FieldSettersHolder.MAP_FIELD_SETTER.set(this, tmpMap);
     FieldSettersHolder.SIZE_FIELD_SETTER.set(this, tmpSize);
   }
 
-  @GwtIncompatible("Not needed in emulated source")
+  @GwtIncompatible // Not needed in emulated source
   private static final long serialVersionUID = 0;
 }

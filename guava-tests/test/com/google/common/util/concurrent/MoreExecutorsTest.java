@@ -49,10 +49,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.testing.ClassSanityTester;
 import com.google.common.util.concurrent.MoreExecutors.Application;
-
-import org.mockito.InOrder;
-import org.mockito.Mockito;
-
 import java.lang.Thread.State;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,6 +64,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -75,6 +72,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 /**
  * Tests for MoreExecutors.
@@ -308,8 +307,7 @@ public class MoreExecutorsTest extends JSR166TestCase {
       throws Exception {
     ListeningExecutorService executor = newDirectExecutorService();
     List<Callable<T>> tasks = ImmutableList.of();
-    @SuppressWarnings("unchecked") // guaranteed by invokeAll contract
-    List<ListenableFuture<T>> futures = (List) executor.invokeAll(tasks);
+    executor.invokeAll(tasks);
   }
 
   public void testListeningDecorator() throws Exception {
@@ -352,8 +350,8 @@ public class MoreExecutorsTest extends JSR166TestCase {
       }
     };
     ListeningScheduledExecutorService service = listeningDecorator(delegate);
-    ListenableFuture<?> future =
-        service.schedule(Callables.returning(null), 1, TimeUnit.MILLISECONDS);
+    ListenableFuture<Integer> future =
+        service.schedule(Callables.returning(42), 1, TimeUnit.MILLISECONDS);
 
     /*
      * Wait not just until the Future's value is set (as in future.get()) but
@@ -362,6 +360,7 @@ public class MoreExecutorsTest extends JSR166TestCase {
      */
     completed.await();
     assertTrue(future.isDone());
+    assertThat(future.get()).isEqualTo(42);
     assertListenerRunImmediately(future);
     assertEquals(0, delegate.getQueue().size());
   }
@@ -464,8 +463,8 @@ public class MoreExecutorsTest extends JSR166TestCase {
   public void testInvokeAnyImpl_nullTasks() throws Exception {
     ListeningExecutorService e = newDirectExecutorService();
     try {
-      invokeAnyImpl(e, null, false, 0);
-      shouldThrow();
+      invokeAnyImpl(e, null, false, 0, TimeUnit.NANOSECONDS);
+      fail();
     } catch (NullPointerException success) {
     } finally {
       joinPool(e);
@@ -478,8 +477,8 @@ public class MoreExecutorsTest extends JSR166TestCase {
   public void testInvokeAnyImpl_emptyTasks() throws Exception {
     ListeningExecutorService e = newDirectExecutorService();
     try {
-      invokeAnyImpl(e, new ArrayList<Callable<String>>(), false, 0);
-      shouldThrow();
+      invokeAnyImpl(e, new ArrayList<Callable<String>>(), false, 0, TimeUnit.NANOSECONDS);
+      fail();
     } catch (IllegalArgumentException success) {
     } finally {
       joinPool(e);
@@ -499,8 +498,8 @@ public class MoreExecutorsTest extends JSR166TestCase {
     });
     l.add(null);
     try {
-      invokeAnyImpl(e, l, false, 0);
-      shouldThrow();
+      invokeAnyImpl(e, l, false, 0, TimeUnit.NANOSECONDS);
+      fail();
     } catch (NullPointerException success) {
     } finally {
       joinPool(e);
@@ -515,10 +514,10 @@ public class MoreExecutorsTest extends JSR166TestCase {
     List<Callable<String>> l = new ArrayList<Callable<String>>();
     l.add(new NPETask());
     try {
-      invokeAnyImpl(e, l, false, 0);
-      shouldThrow();
+      invokeAnyImpl(e, l, false, 0, TimeUnit.NANOSECONDS);
+      fail();
     } catch (ExecutionException success) {
-      assertTrue(success.getCause() instanceof NullPointerException);
+      assertThat(success.getCause()).isInstanceOf(NullPointerException.class);
     } finally {
       joinPool(e);
     }
@@ -533,7 +532,7 @@ public class MoreExecutorsTest extends JSR166TestCase {
       List<Callable<String>> l = new ArrayList<Callable<String>>();
       l.add(new StringTask());
       l.add(new StringTask());
-      String result = invokeAnyImpl(e, l, false, 0);
+      String result = invokeAnyImpl(e, l, false, 0, TimeUnit.NANOSECONDS);
       assertSame(TEST_STRING, result);
     } finally {
       joinPool(e);
@@ -597,7 +596,7 @@ public class MoreExecutorsTest extends JSR166TestCase {
     ThreadPoolExecutor executor = mock(ThreadPoolExecutor.class);
     ThreadFactory threadFactory = mock(ThreadFactory.class);
     when(executor.getThreadFactory()).thenReturn(threadFactory);
-    application.getExitingExecutorService(executor);
+    ExecutorService unused = application.getExitingExecutorService(executor);
     application.shutdown();
     verify(executor).shutdown();
   }
@@ -624,7 +623,7 @@ public class MoreExecutorsTest extends JSR166TestCase {
     ScheduledThreadPoolExecutor executor = mock(ScheduledThreadPoolExecutor.class);
     ThreadFactory threadFactory = mock(ThreadFactory.class);
     when(executor.getThreadFactory()).thenReturn(threadFactory);
-    application.getExitingScheduledExecutorService(executor);
+    ScheduledExecutorService unused = application.getExitingScheduledExecutorService(executor);
     application.shutdown();
     verify(executor).shutdown();
   }

@@ -22,19 +22,20 @@ import static com.google.common.collect.Maps.newTreeMap;
 import static java.util.Collections.singletonMap;
 import static java.util.Collections.unmodifiableSortedMap;
 
+import com.google.common.collect.ImmutableSortedMap.Builder;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
 
 /**
- * GWT emulated version of {@link ImmutableSortedMap}.  It's a thin wrapper
+ * GWT emulated version of {@link com.google.common.collect.ImmutableSortedMap}. It's a thin wrapper
  * around a {@link java.util.TreeMap}.
  *
  * @author Hayward Chan
  */
-public abstract class ImmutableSortedMap<K, V>
-    extends ForwardingImmutableMap<K, V> implements SortedMap<K, V> {
+public final class ImmutableSortedMap<K, V> extends ForwardingImmutableMap<K, V>
+    implements SortedMap<K, V> {
 
   @SuppressWarnings("unchecked")
   static final Comparator NATURAL_ORDER = Ordering.natural();
@@ -64,7 +65,7 @@ public abstract class ImmutableSortedMap<K, V>
   // Casting to any type is safe because the set will never hold any elements.
   @SuppressWarnings("unchecked")
   public static <K, V> ImmutableSortedMap<K, V> of() {
-    return EmptyImmutableSortedMap.forComparator(NATURAL_ORDER);
+    return new Builder<K, V>(NATURAL_ORDER).build();
   }
 
   public static <K extends Comparable<? super K>, V> ImmutableSortedMap<K, V>
@@ -112,7 +113,7 @@ public abstract class ImmutableSortedMap<K, V>
   }
 
   public static <K, V> ImmutableSortedMap<K, V> copyOf(
-      Iterable<? extends Entry<? extends K, ? extends V>> entries, 
+      Iterable<? extends Entry<? extends K, ? extends V>> entries,
           Comparator<? super K> comparator) {
     return new Builder<K, V>(comparator).putAll(entries).build();
   }
@@ -200,13 +201,18 @@ public abstract class ImmutableSortedMap<K, V>
     @Override public Builder<K, V> putAll(Map<? extends K, ? extends V> map) {
       return putAll(map.entrySet());
     }
-    
+
     @Override public Builder<K, V> putAll(
         Iterable<? extends Entry<? extends K, ? extends V>> entries) {
       for (Entry<? extends K, ? extends V> entry : entries) {
         put(entry);
       }
       return this;
+    }
+
+    @Override
+    public Builder<K, V> orderEntriesByValue(Comparator<? super V> valueComparator) {
+      throw new UnsupportedOperationException("Not available on ImmutableSortedMap.Builder");
     }
 
     @Override public ImmutableSortedMap<K, V> build() {
@@ -299,7 +305,7 @@ public abstract class ImmutableSortedMap<K, V>
     if (!inclusive) {
       fromKey = higher(fromKey);
       if (fromKey == null) {
-        return EmptyImmutableSortedMap.forComparator(comparator());
+        return new Builder<K, V>(this.comparator).build();
       }
     }
     return tailMap(fromKey);
@@ -311,10 +317,7 @@ public abstract class ImmutableSortedMap<K, V>
 
   private static <K, V> ImmutableSortedMap<K, V> newView(
       SortedMap<K, V> delegate, Comparator<? super K> comparator) {
-    if (delegate.isEmpty()) {
-      return EmptyImmutableSortedMap.forComparator(comparator);
-    }
-    return new RegularImmutableSortedMap<K, V>(delegate, comparator);
+    return new ImmutableSortedMap<K, V>(delegate, comparator);
   }
 
   /*

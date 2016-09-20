@@ -16,17 +16,16 @@
 
 package com.google.common.collect.testing.testers;
 
+import static com.google.common.collect.testing.Helpers.assertContentsInOrder;
 import static com.google.common.collect.testing.features.CollectionFeature.SUPPORTS_REMOVE;
 import static com.google.common.collect.testing.features.CollectionSize.ONE;
 import static com.google.common.collect.testing.features.CollectionSize.SEVERAL;
 import static com.google.common.collect.testing.features.CollectionSize.ZERO;
-import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.testing.MinimalCollection;
 import com.google.common.collect.testing.features.CollectionFeature;
 import com.google.common.collect.testing.features.CollectionSize;
-
 import java.util.Arrays;
 
 /**
@@ -44,7 +43,8 @@ public class ListRetainAllTester<E> extends AbstractListTester<E> {
     E[] array = createSamplesArray();
     array[1] = e0();
     collection = getSubjectGenerator().create(array);
-    assertFalse("containsDuplicates.retainAll(superset) should return false",
+    assertFalse(
+        "containsDuplicates.retainAll(superset) should return false",
         collection.retainAll(MinimalCollection.of(createSamplesArray())));
     expectContents(array);
   }
@@ -56,18 +56,18 @@ public class ListRetainAllTester<E> extends AbstractListTester<E> {
     E[] array = createSamplesArray();
     array[1] = e0();
     collection = getSubjectGenerator().create(array);
-    assertTrue("containsDuplicates.retainAll(subset) should return true",
+    assertTrue(
+        "containsDuplicates.retainAll(subset) should return true",
         collection.retainAll(MinimalCollection.of(e2())));
     expectContents(e2());
   }
-  
+
   @SuppressWarnings("unchecked")
   @CollectionFeature.Require(SUPPORTS_REMOVE)
   @CollectionSize.Require(SEVERAL)
   public void testRetainAll_countIgnored() {
-    resetContainer(
-        getSubjectGenerator().create(e0(), e2(), e1(), e0()));
+    resetContainer(getSubjectGenerator().create(e0(), e2(), e1(), e0()));
     assertTrue(getList().retainAll(Arrays.asList(e0(), e1())));
-    assertThat(getList()).containsExactly(e0(), e1(), e0()).inOrder();
+    assertContentsInOrder(getList(), e0(), e1(), e0());
   }
 }

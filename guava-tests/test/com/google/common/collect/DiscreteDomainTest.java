@@ -19,7 +19,6 @@ package com.google.common.collect;
 import static com.google.common.testing.SerializableTester.reserializeAndAssert;
 
 import com.google.common.annotations.GwtIncompatible;
-
 import junit.framework.TestCase;
 
 /**
@@ -27,7 +26,7 @@ import junit.framework.TestCase;
  *
  * @author Chris Povirk
  */
-@GwtIncompatible("SerializableTester")
+@GwtIncompatible // SerializableTester
 public class DiscreteDomainTest extends TestCase {
   public void testSerialization() {
     reserializeAndAssert(DiscreteDomain.integers());

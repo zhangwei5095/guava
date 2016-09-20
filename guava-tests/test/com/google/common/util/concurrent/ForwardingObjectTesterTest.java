@@ -17,7 +17,6 @@
 package com.google.common.util.concurrent;
 
 import com.google.common.collect.ForwardingObject;
-
 import junit.framework.TestCase;
 
 /**
@@ -32,10 +31,13 @@ public class ForwardingObjectTesterTest extends TestCase {
       ForwardingObjectTester.testForwardingObject(FailToForward.class);
     } catch (AssertionError expected) {
       return;
+    } catch (UnsupportedOperationException expectedOnAndroid) {
+      return;
     }
     fail("Should have thrown");
   }
 
+  @AndroidIncompatible // TODO(cpovirk): java.lang.IllegalAccessError: superclass not accessible
   public void testSuccessfulForwarding() {
     ForwardingObjectTester.testForwardingObject(ForwardToDelegate.class);
   }

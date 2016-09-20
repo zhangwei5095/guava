@@ -16,8 +16,9 @@
 
 package com.google.common.io;
 
-import com.google.common.base.Charsets;
+import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.base.Charsets;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -195,7 +196,7 @@ public class ByteStreamsTest extends IoTestCase {
       in.readFully(actual);
       fail("expected exception");
     } catch (IllegalStateException ex) {
-      assertTrue(ex.getCause() instanceof EOFException);
+      assertThat(ex.getCause()).isInstanceOf(EOFException.class);
     }
   }
 
@@ -276,7 +277,7 @@ public class ByteStreamsTest extends IoTestCase {
       in.readByte();
       fail("expected exception");
     } catch (IllegalStateException ex) {
-      assertTrue(ex.getCause() instanceof EOFException);
+      assertThat(ex.getCause()).isInstanceOf(EOFException.class);
     }
   }
 
@@ -289,7 +290,7 @@ public class ByteStreamsTest extends IoTestCase {
       in.readUnsignedByte();
       fail("expected exception");
     } catch (IllegalStateException ex) {
-      assertTrue(ex.getCause() instanceof EOFException);
+      assertThat(ex.getCause()).isInstanceOf(EOFException.class);
     }
   }
 
@@ -374,12 +375,23 @@ public class ByteStreamsTest extends IoTestCase {
     assertEquals(new byte[] {0, 97}, out.toByteArray());
   }
 
+  // Hardcoded because of Android problems. See testUtf16Expected.
+  private static final byte[] utf16ExpectedWithBom =
+      new byte[] {-2, -1, 0, 114, 0, -55, 0, 115, 0, 117, 0, 109, 0, -55};
+
   public void testNewDataOutput_writeChars() {
     ByteArrayDataOutput out = ByteStreams.newDataOutput();
     out.writeChars("r\u00C9sum\u00C9");
     // need to remove byte order mark before comparing
-    byte[] expected = Arrays.copyOfRange("r\u00C9sum\u00C9".getBytes(Charsets.UTF_16), 2, 14);
+    byte[] expected = Arrays.copyOfRange(utf16ExpectedWithBom, 2, 14);
     assertEquals(expected, out.toByteArray());
+  }
+
+  @AndroidIncompatible // https://code.google.com/p/android/issues/detail?id=196848
+  public void testUtf16Expected() {
+    byte[] hardcodedExpected = utf16ExpectedWithBom;
+    byte[] computedExpected = "r\u00C9sum\u00C9".getBytes(Charsets.UTF_16);
+    assertEquals(hardcodedExpected, computedExpected);
   }
 
   public void testNewDataOutput_writeUTF() {
@@ -442,6 +454,17 @@ public class ByteStreamsTest extends IoTestCase {
     InputStream in = newTestStream(100);
     byte[] b = ByteStreams.toByteArray(in, 0);
     assertEquals(100, b.length);
+  }
+
+  public void testExhaust() throws IOException {
+    InputStream in = newTestStream(100);
+    assertEquals(100, ByteStreams.exhaust(in));
+    assertEquals(-1, in.read());
+    assertEquals(0, ByteStreams.exhaust(in));
+
+    InputStream empty = newTestStream(0);
+    assertEquals(0, ByteStreams.exhaust(empty));
+    assertEquals(-1, empty.read());
   }
 
   private static InputStream newTestStream(int n) {
@@ -594,7 +617,7 @@ public class ByteStreamsTest extends IoTestCase {
       lin.reset();
       fail();
     } catch (IOException expected) {
-      assertEquals("Mark not set", expected.getMessage());
+      assertThat(expected).hasMessage("Mark not set");
     }
   }
 
@@ -605,7 +628,7 @@ public class ByteStreamsTest extends IoTestCase {
       lin.reset();
       fail();
     } catch (IOException expected) {
-      assertEquals("Mark not supported", expected.getMessage());
+      assertThat(expected).hasMessage("Mark not supported");
     }
   }
 
@@ -629,8 +652,8 @@ public class ByteStreamsTest extends IoTestCase {
     return out;
   }
 
+  // TODO(cpovirk): Inline this.
   private static void assertEquals(byte[] expected, byte[] actual) {
-    assertEquals("Arrays differed in size", expected.length, actual.length);
-    assertTrue("Array contents were different", Arrays.equals(expected, actual));
+    assertThat(actual).isEqualTo(expected);
   }
 }

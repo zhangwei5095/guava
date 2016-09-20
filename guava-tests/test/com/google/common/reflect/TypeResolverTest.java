@@ -16,18 +16,18 @@
 
 package com.google.common.reflect;
 
-import junit.framework.TestCase;
-
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
+import junit.framework.TestCase;
 
 /**
  * Unit tests of {@link TypeResolver}.
  *
  * @author Ben Yu
  */
+@AndroidIncompatible // lots of failures, possibly some related to bad equals() implementations?
 public class TypeResolverTest extends TestCase {
 
   public void testWhere_noMapping() {
@@ -186,23 +186,67 @@ public class TypeResolverTest extends TestCase {
   public <T> void testWhere_wrongOrder() {
     try {
       new TypeResolver().where(String.class, aTypeVariable());
-     fail();
+      fail();
     } catch (IllegalArgumentException expected) {}
   }
 
   public <T> void testWhere_mapFromConcreteParameterizedType() {
     try {
       new TypeResolver().where(new TypeCapture<List<String>>() {}.capture(), aTypeVariable());
-     fail();
+      fail();
     } catch (IllegalArgumentException expected) {}
   }
 
   public <T> void testWhere_mapFromConcreteGenericArrayType() {
     try {
       new TypeResolver().where(new TypeCapture<List<String>>() {}.capture(), aTypeVariable());
-     fail();
+      fail();
     } catch (IllegalArgumentException expected) {}
   }
+
+  public <K, V> void testWhere_actualArgHasWildcard() {
+    TypeResolver resolver = new TypeResolver().where(
+        new TypeCapture<Iterable<Map<?, V>>>() {}.capture(),
+        new TypeCapture<Iterable<Map<String, Integer>>>() {}.capture());
+    assertEquals(
+        new TypeCapture<K>() {}.capture(), resolver.resolveType(new TypeCapture<K>() {}.capture()));
+    assertEquals(
+        Integer.class, resolver.resolveType(new TypeCapture<V>() {}.capture()));
+  }
+
+  public <T> void testWhere_mapFromWildcard() {
+    Type subtype = new TypeCapture<TypedKeyMap<T>>() {}.capture();
+    assertEquals(new TypeCapture<TypedKeyMap<String>>() {}.capture(),
+        new TypeResolver()
+            .where(
+                new TypeCapture<Map<Integer, T>>() {}.capture(),
+                new TypeCapture<Map<?, String>>() {}.capture())
+        .resolveType(subtype));
+  }
+
+  public <T> void testWhere_mapFromWildcardToParameterized() {
+    Type subtype = new TypeCapture<TypedListKeyMap<T>>() {}.capture();
+    assertEquals(new TypeCapture<TypedListKeyMap<String>>() {}.capture(),
+        new TypeResolver()
+            .where(
+                new TypeCapture<Map<List<Integer>, T>>() {}.capture(),
+                new TypeCapture<Map<?, String>>() {}.capture())
+        .resolveType(subtype));
+  }
+
+  public <T> void testWhere_mapFromBoundedWildcard() {
+    Type subtype = new TypeCapture<TypedKeyMap<T>>() {}.capture();
+    // TODO(benyu): This should check equality to an expected value, see discussion in cl/98674873
+    Type unused =
+        new TypeResolver()
+            .where(
+                new TypeCapture<Map<Integer, T>>() {}.capture(),
+                new TypeCapture<Map<? extends Number, ? extends Number>>() {}.capture())
+            .resolveType(subtype);
+  }
+
+  interface TypedKeyMap<T> extends Map<Integer, T> {}
+  interface TypedListKeyMap<T> extends Map<List<Integer>, T> {}
 
   private static <T> Type aTypeVariable() {
     return new TypeCapture<T>() {}.capture();

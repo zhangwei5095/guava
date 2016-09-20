@@ -21,9 +21,6 @@ import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.testing.NullPointerTester;
-
-import junit.framework.TestCase;
-
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -31,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import junit.framework.TestCase;
 
 /**
  * Tests for {@link AtomicLongMap}.
@@ -44,7 +42,7 @@ public class AtomicLongMapTest extends TestCase {
 
   private Random random = new Random(301);
 
-  @GwtIncompatible("NullPointerTester")
+  @GwtIncompatible // NullPointerTester
   public void testNulls() {
     NullPointerTester tester = new NullPointerTester();
     tester.testAllPublicConstructors(AtomicLongMap.class);
@@ -457,6 +455,24 @@ public class AtomicLongMapTest extends TestCase {
     assertFalse(map.containsKey(key));
   }
 
+  public void testRemoveIfZero() {
+    AtomicLongMap<String> map = AtomicLongMap.create();
+    String key = "key";
+    assertEquals(0, map.size());
+    assertTrue(map.isEmpty());
+    assertFalse(map.removeIfZero(key));
+
+    assertEquals(1, map.incrementAndGet(key));
+    assertFalse(map.removeIfZero(key));
+    assertEquals(2, map.incrementAndGet(key));
+    assertFalse(map.removeIfZero(key));
+    assertEquals(1, map.decrementAndGet(key));
+    assertFalse(map.removeIfZero(key));
+    assertEquals(0, map.decrementAndGet(key));
+    assertTrue(map.removeIfZero(key));
+    assertFalse(map.containsKey(key));
+  }
+
   public void testRemoveValue() {
     AtomicLongMap<String> map = AtomicLongMap.create();
     String key = "key";
@@ -554,7 +570,7 @@ public class AtomicLongMapTest extends TestCase {
     assertFalse(map.replace("a", 1L, 0L));
   }
 
-  @GwtIncompatible("threads")
+  @GwtIncompatible // threads
   public void testModify_basher() throws InterruptedException {
     int nTasks = 3000;
     int nThreads = 100;

@@ -18,7 +18,6 @@ package com.google.common.io;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-
 import java.io.BufferedReader;
 import java.io.FilterReader;
 import java.io.IOException;
@@ -33,6 +32,7 @@ import java.util.List;
  *
  * @author Chris Nokleberg
  */
+@AndroidIncompatible // occasionally very slow
 public class LineBufferTest extends IoTestCase {
 
   public void testProcess() throws IOException {

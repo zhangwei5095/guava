@@ -16,9 +16,9 @@
 
 package com.google.common.collect.testing;
 
-import junit.framework.TestSuite;
-
+import com.google.common.annotations.GwtIncompatible;
 import java.util.List;
+import junit.framework.TestSuite;
 
 /**
  * Given a test iterable generator, builds a test suite for the
@@ -26,26 +26,27 @@ import java.util.List;
  *
  * @author George van den Driessche
  */
+@GwtIncompatible
 public class DerivedIteratorTestSuiteBuilder<E>
     extends FeatureSpecificTestSuiteBuilder<
-        DerivedIteratorTestSuiteBuilder<E>,
-        TestSubjectGenerator<? extends Iterable<E>>> {
+        DerivedIteratorTestSuiteBuilder<E>, TestSubjectGenerator<? extends Iterable<E>>> {
   /**
    * We rely entirely on the delegate builder for test creation, so this
    * just throws UnsupportedOperationException.
    *
    * @return never.
    */
-  @Override protected List<Class<? extends AbstractTester>> getTesters() {
+  @Override
+  protected List<Class<? extends AbstractTester>> getTesters() {
     throw new UnsupportedOperationException();
   }
 
-  @Override public TestSuite createTestSuite() {
+  @Override
+  public TestSuite createTestSuite() {
     checkCanCreate();
     return new IteratorTestSuiteBuilder<E>()
         .named(getName() + " iterator")
-        .usingGenerator(new DerivedTestIteratorGenerator<E>(
-            getSubjectGenerator()))
+        .usingGenerator(new DerivedTestIteratorGenerator<E>(getSubjectGenerator()))
         .withFeatures(getFeatures())
         .createTestSuite();
   }

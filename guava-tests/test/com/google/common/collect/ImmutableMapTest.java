@@ -45,11 +45,6 @@ import com.google.common.collect.testing.google.MapGenerators.ImmutableMapValueL
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.testing.SerializableTester;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,6 +52,9 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
  * Tests for {@link ImmutableMap}.
@@ -67,7 +65,7 @@ import java.util.Map.Entry;
 @GwtCompatible(emulated = true)
 public class ImmutableMapTest extends TestCase {
 
-  @GwtIncompatible("suite")
+  @GwtIncompatible // suite
   public static Test suite() {
     TestSuite suite = new TestSuite();
     suite.addTestSuite(ImmutableMapTest.class);
@@ -212,9 +210,8 @@ public class ImmutableMapTest extends TestCase {
     }
   }
 
-  @GwtIncompatible("SerializableTester")
-  public static class ReserializedMapTests
-      extends AbstractMapTests<String, Integer> {
+  @GwtIncompatible // SerializableTester
+  public static class ReserializedMapTests extends AbstractMapTests<String, Integer> {
     @Override protected Map<String, Integer> makePopulatedMap() {
       return SerializableTester.reserialize(
           ImmutableMap.of("one", 1, "two", 2, "three", 3));
@@ -254,7 +251,7 @@ public class ImmutableMapTest extends TestCase {
     }
   }
 
-  @GwtIncompatible("GWT's ImmutableMap emulation is backed by java.util.HashMap.")
+  @GwtIncompatible // GWT's ImmutableMap emulation is backed by java.util.HashMap.
   public static class MapTestsWithUnhashableValues
       extends AbstractMapTests<Integer, UnhashableObject> {
     @Override protected Map<Integer, UnhashableObject> makeEmptyMap() {
@@ -276,9 +273,8 @@ public class ImmutableMapTest extends TestCase {
     }
   }
 
-  @GwtIncompatible("GWT's ImmutableMap emulation is backed by java.util.HashMap.")
-  public static class MapTestsWithSingletonUnhashableValue
-      extends MapTestsWithUnhashableValues {
+  @GwtIncompatible // GWT's ImmutableMap emulation is backed by java.util.HashMap.
+  public static class MapTestsWithSingletonUnhashableValue extends MapTestsWithUnhashableValues {
     @Override protected Map<Integer, UnhashableObject> makePopulatedMap() {
       Unhashables unhashables = new Unhashables();
       return ImmutableMap.of(0, unhashables.e0());
@@ -309,6 +305,39 @@ public class ImmutableMapTest extends TestCase {
           .build();
       assertMapEquals(map,
           "one", 1, "two", 2, "three", 3, "four", 4, "five", 5);
+    }
+
+    public void testBuilder_orderEntriesByValue() {
+      ImmutableMap<String, Integer> map = new Builder<String, Integer>()
+          .orderEntriesByValue(Ordering.natural())
+          .put("three", 3)
+          .put("one", 1)
+          .put("five", 5)
+          .put("four", 4)
+          .put("two", 2)
+          .build();
+      assertMapEquals(map,
+          "one", 1, "two", 2, "three", 3, "four", 4, "five", 5);
+    }
+
+    public void testBuilder_orderEntriesByValueAfterExactSizeBuild() {
+      Builder<String, Integer> builder = new Builder<String, Integer>(2)
+          .put("four", 4)
+          .put("one", 1);
+      ImmutableMap<String, Integer> keyOrdered = builder.build();
+      ImmutableMap<String, Integer> valueOrdered =
+          builder.orderEntriesByValue(Ordering.natural()).build();
+      assertMapEquals(keyOrdered, "four", 4, "one", 1);
+      assertMapEquals(valueOrdered, "one", 1, "four", 4);
+    }
+
+    public void testBuilder_orderEntriesByValue_usedTwiceFails() {
+      ImmutableMap.Builder<String, Integer> builder = new Builder<String, Integer>()
+          .orderEntriesByValue(Ordering.natural());
+      try {
+        builder.orderEntriesByValue(Ordering.natural());
+        fail("Expected IllegalStateException");
+      } catch (IllegalStateException expected) {}
     }
 
     public void testBuilder_withImmutableEntry() {
@@ -600,7 +629,7 @@ public class ImmutableMapTest extends TestCase {
     assertSame(multimap1, multimap2);
   }
 
-  @GwtIncompatible("NullPointerTester")
+  @GwtIncompatible // NullPointerTester
   public void testNullPointers() {
     NullPointerTester tester = new NullPointerTester();
     tester.testAllPublicStaticMethods(ImmutableMap.class);
@@ -659,7 +688,7 @@ public class ImmutableMapTest extends TestCase {
     assertTrue(ImmutableMap.copyOf(map) instanceof ImmutableEnumMap);
   }
 
-  @GwtIncompatible("SerializableTester")
+  @GwtIncompatible // SerializableTester
   public void testViewSerialization() {
     Map<String, Integer> map = ImmutableMap.of("one", 1, "two", 2, "three", 3);
     LenientSerializableTester.reserializeAndAssertLenient(map.entrySet());
@@ -673,31 +702,15 @@ public class ImmutableMapTest extends TestCase {
 
   public void testEquals() {
     new EqualsTester()
-        .addEqualityGroup(ImmutableList.of(), ImmutableList.of())
-        .addEqualityGroup(ImmutableList.of(1), ImmutableList.of(1))
-        .addEqualityGroup(ImmutableList.of(1, 2), ImmutableList.of(1, 2))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6, 7))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6, 7, 8))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6, 7, 8, 9))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
-        .addEqualityGroup(ImmutableList.of(100, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
-        .addEqualityGroup(ImmutableList.of(1, 200, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
-        .addEqualityGroup(ImmutableList.of(1, 2, 300, 4, 5, 6, 7, 8, 9, 10, 11, 12))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 400, 5, 6, 7, 8, 9, 10, 11, 12))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 500, 6, 7, 8, 9, 10, 11, 12))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 600, 7, 8, 9, 10, 11, 12))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6, 700, 8, 9, 10, 11, 12))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6, 7, 800, 9, 10, 11, 12))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6, 7, 8, 900, 10, 11, 12))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 1000, 11, 12))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1100, 12))
-        .addEqualityGroup(ImmutableList.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 1200))
+        .addEqualityGroup(ImmutableMap.of(), ImmutableMap.builder().build())
+        .addEqualityGroup(ImmutableMap.of(1, 1), ImmutableMap.builder().put(1, 1).build())
+        .addEqualityGroup(ImmutableMap.of(1, 1, 2, 2))
+        .addEqualityGroup(ImmutableMap.of(1, 1, 2, 2, 3, 3))
+        .addEqualityGroup(ImmutableMap.of(1, 4, 2, 2, 3, 3))
+        .addEqualityGroup(ImmutableMap.of(1, 1, 2, 4, 3, 3))
+        .addEqualityGroup(ImmutableMap.of(1, 1, 2, 2, 3, 4))
+        .addEqualityGroup(ImmutableMap.of(1, 2, 2, 3, 3, 1))
+        .addEqualityGroup(ImmutableMap.of(1, 1, 2, 2, 3, 3, 4, 4))
         .testEquals();
 
   }

@@ -16,6 +16,7 @@
 
 package com.google.common.collect;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Arrays.asList;
 
@@ -24,16 +25,11 @@ import com.google.common.annotations.GwtIncompatible;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.testing.IteratorFeature;
 import com.google.common.collect.testing.IteratorTester;
 import com.google.common.testing.NullPointerTester;
-
-import junit.framework.AssertionFailedError;
-import junit.framework.TestCase;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,8 +37,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
-
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
+import junit.framework.AssertionFailedError;
+import junit.framework.TestCase;
 
 /**
  * Unit test for {@link FluentIterable}.
@@ -52,10 +50,29 @@ import javax.annotation.Nullable;
 @GwtCompatible(emulated = true)
 public class FluentIterableTest extends TestCase {
 
-  @GwtIncompatible("NullPointerTester")
+  @GwtIncompatible // NullPointerTester
   public void testNullPointerExceptions() {
     NullPointerTester tester = new NullPointerTester();
     tester.testAllPublicStaticMethods(FluentIterable.class);
+  }
+
+  public void testFromArrayAndAppend() {
+    FluentIterable<TimeUnit> units =
+        FluentIterable.from(TimeUnit.values()).append(TimeUnit.SECONDS);
+  }
+
+  public void testFromArrayAndIteratorRemove() {
+    FluentIterable<TimeUnit> units = FluentIterable.from(TimeUnit.values());
+    try {
+      Iterables.removeIf(units, Predicates.equalTo(TimeUnit.SECONDS));
+      fail("Expected an UnsupportedOperationException to be thrown but it wasn't.");
+    } catch (UnsupportedOperationException expected) {
+    }
+  }
+
+  public void testOfArrayAndIteratorRemove() {
+    FluentIterable<TimeUnit> units = FluentIterable.of(TimeUnit.values());
+    assertTrue(Iterables.removeIf(units, Predicates.equalTo(TimeUnit.SECONDS)));
   }
 
   public void testFrom() {
@@ -69,9 +86,119 @@ public class FluentIterableTest extends TestCase {
     assertSame(iterable, FluentIterable.from(iterable));
   }
 
+  public void testOf() {
+    assertEquals(ImmutableList.of(1, 2, 3, 4),
+        Lists.newArrayList(FluentIterable.of(1, 2, 3, 4)));
+  }
+
   public void testOfArray() {
     assertEquals(ImmutableList.of("1", "2", "3", "4"),
         Lists.newArrayList(FluentIterable.of(new Object[] {"1", "2", "3", "4"})));
+  }
+
+  public void testFromArray() {
+    assertEquals(ImmutableList.of("1", "2", "3", "4"),
+        Lists.newArrayList(FluentIterable.from(new Object[] {"1", "2", "3", "4"})));
+  }
+
+  public void testOf_empty() {
+    assertEquals(ImmutableList.of(), Lists.newArrayList(FluentIterable.of()));
+  }
+
+  // Exhaustive tests are in IteratorsTest. These are copied from IterablesTest.
+  public void testConcatIterable() {
+    List<Integer> list1 = newArrayList(1);
+    List<Integer> list2 = newArrayList(4);
+
+    @SuppressWarnings("unchecked")
+    List<List<Integer>> input = newArrayList(list1, list2);
+
+    FluentIterable<Integer> result = FluentIterable.concat(input);
+    assertEquals(asList(1, 4), newArrayList(result));
+
+    // Now change the inputs and see result dynamically change as well
+
+    list1.add(2);
+    List<Integer> list3 = newArrayList(3);
+    input.add(1, list3);
+
+    assertEquals(asList(1, 2, 3, 4), newArrayList(result));
+    assertEquals("[1, 2, 3, 4]", result.toString());
+  }
+
+  public void testConcatVarargs() {
+    List<Integer> list1 = newArrayList(1);
+    List<Integer> list2 = newArrayList(4);
+    List<Integer> list3 = newArrayList(7, 8);
+    List<Integer> list4 = newArrayList(9);
+    List<Integer> list5 = newArrayList(10);
+    @SuppressWarnings("unchecked")
+    FluentIterable<Integer> result = FluentIterable.concat(list1, list2, list3, list4, list5);
+    assertEquals(asList(1, 4, 7, 8, 9, 10), newArrayList(result));
+    assertEquals("[1, 4, 7, 8, 9, 10]", result.toString());
+  }
+
+  public void testConcatNullPointerException() {
+    List<Integer> list1 = newArrayList(1);
+    List<Integer> list2 = newArrayList(4);
+
+    try {
+      FluentIterable.concat(list1, null, list2);
+      fail();
+    } catch (NullPointerException expected) {
+    }
+  }
+
+  public void testConcatPeformingFiniteCycle() {
+    Iterable<Integer> iterable = asList(1, 2, 3);
+    int n = 4;
+    FluentIterable<Integer> repeated = FluentIterable.concat(Collections.nCopies(n, iterable));
+    assertThat(repeated).containsExactly(1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2, 3).inOrder();
+  }
+
+  interface X {}
+
+  interface Y {}
+
+  static class A implements X, Y {}
+
+  static class B implements X, Y {}
+
+  /**
+   * This test passes if the {@code concat(…).filter(…).filter(…)} statement at the end compiles.
+   * That statement compiles only if {@link FluentIterable#concat concat(aIterable, bIterable)}
+   * returns a {@link FluentIterable} of elements of an anonymous type whose supertypes are the
+   * <a href="https://docs.oracle.com/javase/specs/jls/se7/html/jls-4.html#jls-4.9">intersection</a>
+   * of the supertypes of {@code A} and the supertypes of {@code B}.
+   */
+  public void testConcatIntersectionType() {
+    Iterable<A> aIterable = ImmutableList.of();
+    Iterable<B> bIterable = ImmutableList.of();
+
+    Predicate<X> xPredicate = Predicates.alwaysTrue();
+    Predicate<Y> yPredicate = Predicates.alwaysTrue();
+
+    FluentIterable<?> unused =
+        FluentIterable.concat(aIterable, bIterable).filter(xPredicate).filter(yPredicate);
+
+    /* The following fails to compile:
+     *
+     * The method append(Iterable<? extends FluentIterableTest.A>) in the type
+     * FluentIterable<FluentIterableTest.A> is not applicable for the arguments
+     * (Iterable<FluentIterableTest.B>)
+     */
+    // FluentIterable.from(aIterable).append(bIterable);
+
+    /* The following fails to compile:
+     *
+     * The method filter(Predicate<? super Object>) in the type FluentIterable<Object> is not
+     * applicable for the arguments (Predicate<FluentIterableTest.X>)
+     */
+    // FluentIterable.of().append(aIterable).append(bIterable).filter(xPredicate);
+  }
+
+  public void testSize0() {
+    assertEquals(0, FluentIterable.<String>of().size());
   }
 
   public void testSize1Collection() {
@@ -138,6 +265,19 @@ public class FluentIterableTest extends TestCase {
     assertFalse(FluentIterable.from(iterable).contains("c"));
   }
 
+  public void testOfToString() {
+    assertEquals("[yam, bam, jam, ham]",
+        FluentIterable.of("yam", "bam", "jam", "ham").toString());
+  }
+
+  public void testToString() {
+    assertEquals("[]", FluentIterable.from(Collections.emptyList()).toString());
+    assertEquals("[]", FluentIterable.<String>of().toString());
+
+    assertEquals("[yam, bam, jam, ham]",
+        FluentIterable.from(asList("yam", "bam", "jam", "ham")).toString());
+  }
+
   public void testCycle() {
     FluentIterable<String> cycle = FluentIterable.from(asList("a", "b")).cycle();
 
@@ -153,6 +293,11 @@ public class FluentIterableTest extends TestCase {
     // We left the last iterator pointing to "b". But a new iterator should
     // always point to "a".
     assertEquals("a", cycle.iterator().next());
+  }
+
+  public void testCycle_emptyIterable() {
+    FluentIterable<Integer> cycle = FluentIterable.<Integer>of().cycle();
+    assertFalse(cycle.iterator().hasNext());
   }
 
   public void testCycle_removingAllElementsStopsCycle() {
@@ -177,16 +322,22 @@ public class FluentIterableTest extends TestCase {
     assertEquals("[1, 2, 3, 4, 5, 6]", result.toString());
   }
 
+  public void testAppend_toEmpty() {
+    FluentIterable<Integer> result =
+        FluentIterable.<Integer>of().append(Lists.newArrayList(1, 2, 3));
+    assertEquals(asList(1, 2, 3), Lists.newArrayList(result));
+  }
+
   public void testAppend_emptyList() {
     FluentIterable<Integer> result =
         FluentIterable.<Integer>from(asList(1, 2, 3)).append(Lists.<Integer>newArrayList());
     assertEquals(asList(1, 2, 3), Lists.newArrayList(result));
   }
 
-  @SuppressWarnings("ReturnValueIgnored")
   public void testAppend_nullPointerException() {
     try {
-      FluentIterable.<Integer>from(asList(1, 2)).append((List<Integer>) null);
+      FluentIterable<Integer> unused =
+          FluentIterable.<Integer>from(asList(1, 2)).append((List<Integer>) null);
       fail("Appending null iterable should throw NPE.");
     } catch (NullPointerException expected) {
     }
@@ -215,7 +366,7 @@ public class FluentIterableTest extends TestCase {
   private interface TypeB {}
   private static class HasBoth extends TypeA implements TypeB {}
 
-  @GwtIncompatible("Iterables.filter(Iterable, Class)")
+  @GwtIncompatible // Iterables.filter(Iterable, Class)
   public void testFilterByType() throws Exception {
     HasBoth hasBoth = new HasBoth();
     FluentIterable<TypeA> alist =
@@ -250,10 +401,10 @@ public class FluentIterableTest extends TestCase {
 
   public void testFirstMatch() {
     FluentIterable<String> iterable = FluentIterable.from(Lists.newArrayList("cool", "pants"));
-    assertEquals(Optional.of("cool"), iterable.firstMatch(Predicates.equalTo("cool")));
-    assertEquals(Optional.of("pants"), iterable.firstMatch(Predicates.equalTo("pants")));
-    assertEquals(Optional.absent(), iterable.firstMatch(Predicates.alwaysFalse()));
-    assertEquals(Optional.of("cool"), iterable.firstMatch(Predicates.alwaysTrue()));
+    assertThat(iterable.firstMatch(Predicates.equalTo("cool"))).hasValue("cool");
+    assertThat(iterable.firstMatch(Predicates.equalTo("pants"))).hasValue("pants");
+    assertThat(iterable.firstMatch(Predicates.alwaysFalse())).isAbsent();
+    assertThat(iterable.firstMatch(Predicates.alwaysTrue())).hasValue("cool");
   }
 
   private static final class IntegerValueOfFunction implements Function<String, Integer> {
@@ -329,12 +480,13 @@ public class FluentIterableTest extends TestCase {
 
   public void testTransformAndConcat_wildcardFunctionGenerics() {
     List<Integer> input = asList(1, 2, 3);
-    FluentIterable.from(input).transformAndConcat(new RepeatedStringValueOfWildcardFunction());
+    FluentIterable<String> unused =
+        FluentIterable.from(input).transformAndConcat(new RepeatedStringValueOfWildcardFunction());
   }
 
   public void testFirst_list() {
     List<String> list = Lists.newArrayList("a", "b", "c");
-    assertEquals("a", FluentIterable.from(list).first().get());
+    assertThat(FluentIterable.from(list).first()).hasValue("a");
   }
 
   public void testFirst_null() {
@@ -348,32 +500,32 @@ public class FluentIterableTest extends TestCase {
 
   public void testFirst_emptyList() {
     List<String> list = Collections.emptyList();
-    assertEquals(Optional.absent(), FluentIterable.from(list).first());
+    assertThat(FluentIterable.from(list).first()).isAbsent();
   }
 
   public void testFirst_sortedSet() {
     SortedSet<String> sortedSet = ImmutableSortedSet.of("b", "c", "a");
-    assertEquals("a", FluentIterable.from(sortedSet).first().get());
+    assertThat(FluentIterable.from(sortedSet).first()).hasValue("a");
   }
 
   public void testFirst_emptySortedSet() {
     SortedSet<String> sortedSet = ImmutableSortedSet.of();
-    assertEquals(Optional.absent(), FluentIterable.from(sortedSet).first());
+    assertThat(FluentIterable.from(sortedSet).first()).isAbsent();
   }
 
   public void testFirst_iterable() {
     Set<String> set = ImmutableSet.of("a", "b", "c");
-    assertEquals("a", FluentIterable.from(set).first().get());
+    assertThat(FluentIterable.from(set).first()).hasValue("a");
   }
 
   public void testFirst_emptyIterable() {
     Set<String> set = Sets.newHashSet();
-    assertEquals(Optional.absent(), FluentIterable.from(set).first());
+    assertThat(FluentIterable.from(set).first()).isAbsent();
   }
 
   public void testLast_list() {
     List<String> list = Lists.newArrayList("a", "b", "c");
-    assertEquals("c", FluentIterable.from(list).last().get());
+    assertThat(FluentIterable.from(list).last()).hasValue("c");
   }
 
   public void testLast_null() {
@@ -387,27 +539,27 @@ public class FluentIterableTest extends TestCase {
 
   public void testLast_emptyList() {
     List<String> list = Collections.emptyList();
-    assertEquals(Optional.absent(), FluentIterable.from(list).last());
+    assertThat(FluentIterable.from(list).last()).isAbsent();
   }
 
   public void testLast_sortedSet() {
     SortedSet<String> sortedSet = ImmutableSortedSet.of("b", "c", "a");
-    assertEquals("c", FluentIterable.from(sortedSet).last().get());
+    assertThat(FluentIterable.from(sortedSet).last()).hasValue("c");
   }
 
   public void testLast_emptySortedSet() {
     SortedSet<String> sortedSet = ImmutableSortedSet.of();
-    assertEquals(Optional.absent(), FluentIterable.from(sortedSet).last());
+    assertThat(FluentIterable.from(sortedSet).last()).isAbsent();
   }
 
   public void testLast_iterable() {
     Set<String> set = ImmutableSet.of("a", "b", "c");
-    assertEquals("c", FluentIterable.from(set).last().get());
+    assertThat(FluentIterable.from(set).last()).hasValue("c");
   }
 
   public void testLast_emptyIterable() {
     Set<String> set = Sets.newHashSet();
-    assertEquals(Optional.absent(), FluentIterable.from(set).last());
+    assertThat(FluentIterable.from(set).last()).isAbsent();
   }
 
   public void testSkip_simple() {
@@ -509,7 +661,6 @@ public class FluentIterableTest extends TestCase {
     assertThat(tail).isEmpty();
   }
 
-  @SuppressWarnings("ReturnValueIgnored")
   public void testSkip_illegalArgument() {
     try {
       FluentIterable.from(asList("a", "b", "c")).skip(-1);
@@ -527,10 +678,10 @@ public class FluentIterableTest extends TestCase {
     assertEquals("[foo, bar]", limited.toString());
   }
 
-  @SuppressWarnings("ReturnValueIgnored")
   public void testLimit_illegalArgument() {
     try {
-      FluentIterable.from(Lists.newArrayList("a", "b", "c")).limit(-1);
+      FluentIterable<String> unused =
+          FluentIterable.from(Lists.newArrayList("a", "b", "c")).limit(-1);
       fail("Passing negative number to limit(...) method should throw IllegalArgumentException");
     } catch (IllegalArgumentException expected) {
     }
@@ -633,7 +784,8 @@ public class FluentIterableTest extends TestCase {
 
   public void testIndex_nullKey() {
     try {
-      fluent(1, 2, 3).index(Functions.constant(null));
+      ImmutableListMultimap<Object, Integer> unused =
+          fluent(1, 2, 3).index(Functions.constant(null));
       fail();
     } catch (NullPointerException expected) {
     }
@@ -641,7 +793,8 @@ public class FluentIterableTest extends TestCase {
 
   public void testIndex_nullValue() {
     try {
-      fluent(1, null, 2).index(Functions.constant("foo"));
+      ImmutableListMultimap<String, Integer> unused =
+          fluent(1, null, 2).index(Functions.constant("foo"));
       fail();
     } catch (NullPointerException expected) {
     }
@@ -663,13 +816,15 @@ public class FluentIterableTest extends TestCase {
 
   public void testUniqueIndex_duplicateKey() {
     try {
-      FluentIterable.from(asList("one", "two", "three", "four")).uniqueIndex(
-          new Function<String, Integer>() {
-            @Override
-            public Integer apply(String input) {
-              return input.length();
-            }
-          });
+      ImmutableMap<Integer, String> unused =
+          FluentIterable.from(asList("one", "two", "three", "four"))
+              .uniqueIndex(
+                  new Function<String, Integer>() {
+                    @Override
+                    public Integer apply(String input) {
+                      return input.length();
+                    }
+                  });
       fail();
     } catch (IllegalArgumentException expected) {
     }
@@ -685,12 +840,15 @@ public class FluentIterableTest extends TestCase {
 
   public void testUniqueIndex_nullValue() {
     try {
-      fluent(1, null, 2).uniqueIndex(new Function<Integer, Object>() {
-        @Override
-        public Object apply(@Nullable Integer input) {
-          return String.valueOf(input);
-        }
-      });
+      ImmutableMap<Object, Integer> unused =
+          fluent(1, null, 2)
+              .uniqueIndex(
+                  new Function<Integer, Object>() {
+                    @Override
+                    public Object apply(@Nullable Integer input) {
+                      return String.valueOf(input);
+                    }
+                  });
       fail();
     } catch (NullPointerException expected) {
     }
@@ -758,7 +916,8 @@ public class FluentIterableTest extends TestCase {
   }
 
   private static void assertCanIterateAgain(Iterable<?> iterable) {
-    for (@SuppressWarnings("unused") Object obj : iterable) {
+    for (Object unused : iterable) {
+      // do nothing
     }
   }
 

@@ -18,19 +18,17 @@ import static com.google.common.collect.BoundType.OPEN;
 
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.testing.SerializableTester;
-
-import junit.framework.TestCase;
-
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import junit.framework.TestCase;
 
 /**
  * Tests for {@code ImmutableRangeMap}.
  *
  * @author Louis Wasserman
  */
-@GwtIncompatible("NavigableMap")
+@GwtIncompatible // NavigableMap
 public class ImmutableRangeMapTest extends TestCase {
   private static final ImmutableList<Range<Integer>> RANGES;
   private static final int MIN_BOUND = 0;
@@ -181,6 +179,7 @@ public class ImmutableRangeMapTest extends TestCase {
     }
   }
 
+  @AndroidIncompatible // slow
   public void testAsMapOfRanges() {
     for (Range<Integer> range1 : RANGES) {
       for (Range<Integer> range2 : RANGES) {
@@ -191,8 +190,13 @@ public class ImmutableRangeMapTest extends TestCase {
           ImmutableMap<Range<Integer>, Integer> expectedAsMap =
               ImmutableMap.of(range1, 1, range2, 2);
           ImmutableMap<Range<Integer>, Integer> asMap = rangeMap.asMapOfRanges();
+          ImmutableMap<Range<Integer>, Integer> descendingMap = rangeMap.asDescendingMapOfRanges();
           assertEquals(expectedAsMap, asMap);
+          assertEquals(expectedAsMap, descendingMap);
           SerializableTester.reserializeAndAssert(asMap);
+          SerializableTester.reserializeAndAssert(descendingMap);
+          assertEquals(ImmutableList.copyOf(asMap.entrySet()).reverse(),
+              ImmutableList.copyOf(descendingMap.entrySet()));
 
           for (Range<Integer> query : RANGES) {
             assertEquals(expectedAsMap.get(query), asMap.get(query));

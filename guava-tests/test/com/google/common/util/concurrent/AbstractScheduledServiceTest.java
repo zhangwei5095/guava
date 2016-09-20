@@ -16,15 +16,15 @@
 
 package com.google.common.util.concurrent;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.AbstractScheduledService.Scheduler.newFixedDelaySchedule;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.common.util.concurrent.AbstractScheduledService.Scheduler;
 import com.google.common.util.concurrent.Service.State;
-
-import junit.framework.TestCase;
-
+import com.google.common.util.concurrent.testing.TestingExecutors;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -38,6 +38,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import junit.framework.TestCase;
 
 /**
  * Unit test for {@link AbstractScheduledService}.
@@ -243,6 +244,31 @@ public class AbstractScheduledServiceTest extends TestCase {
     assertEquals(1, service.numberOfTimesSchedulerCalled.get());
   }
 
+  public void testTimeout() {
+    // Create a service whose executor will never run its commands
+    Service service = new AbstractScheduledService() {
+      @Override protected Scheduler scheduler() {
+        return Scheduler.newFixedDelaySchedule(0, 1, TimeUnit.NANOSECONDS);
+      }
+
+      @Override protected ScheduledExecutorService executor() {
+        return TestingExecutors.noOpScheduledExecutor();
+      }
+
+      @Override protected void runOneIteration() throws Exception {}
+
+      @Override protected String serviceName() {
+        return "Foo";
+      }
+    };
+    try {
+      service.startAsync().awaitRunning(1, TimeUnit.MILLISECONDS);
+      fail("Expected timeout");
+    } catch (TimeoutException e) {
+      assertThat(e).hasMessage("Timed out waiting for Foo [STARTING] to reach the RUNNING state.");
+    }
+  }
+
   private class TestService extends AbstractScheduledService {
     CyclicBarrier runFirstBarrier = new CyclicBarrier(2);
     CyclicBarrier runSecondBarrier = new CyclicBarrier(2);
@@ -326,27 +352,35 @@ public class AbstractScheduledServiceTest extends TestCase {
 
     public void testFixedRateSchedule() {
       Scheduler schedule = Scheduler.newFixedRateSchedule(initialDelay, delay, unit);
-      schedule.schedule(null, new ScheduledThreadPoolExecutor(1) {
-        @Override
-        public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay,
-            long period, TimeUnit unit) {
-          assertSingleCallWithCorrectParameters(command, initialDelay, delay, unit);
-          return null;
-        }
-      }, testRunnable);
+      Future<?> unused =
+          schedule.schedule(
+              null,
+              new ScheduledThreadPoolExecutor(1) {
+                @Override
+                public ScheduledFuture<?> scheduleAtFixedRate(
+                    Runnable command, long initialDelay, long period, TimeUnit unit) {
+                  assertSingleCallWithCorrectParameters(command, initialDelay, delay, unit);
+                  return null;
+                }
+              },
+              testRunnable);
       assertTrue(called);
     }
 
     public void testFixedDelaySchedule() {
       Scheduler schedule = newFixedDelaySchedule(initialDelay, delay, unit);
-      schedule.schedule(null, new ScheduledThreadPoolExecutor(10) {
-        @Override
-        public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay,
-            long delay, TimeUnit unit) {
-          assertSingleCallWithCorrectParameters(command, initialDelay, delay, unit);
-          return null;
-        }
-      }, testRunnable);
+      Future<?> unused =
+          schedule.schedule(
+              null,
+              new ScheduledThreadPoolExecutor(10) {
+                @Override
+                public ScheduledFuture<?> scheduleWithFixedDelay(
+                    Runnable command, long initialDelay, long delay, TimeUnit unit) {
+                  assertSingleCallWithCorrectParameters(command, initialDelay, delay, unit);
+                  return null;
+                }
+              },
+              testRunnable);
       assertTrue(called);
     }
 
@@ -439,6 +473,31 @@ public class AbstractScheduledServiceTest extends TestCase {
       // Sleep for a while just to ensure that our task wasn't called again.
       Thread.sleep(unit.toMillis(3 * delay));
       assertEquals(1, service.numIterations.get());
+    }
+
+    public void testCustomScheduler_deadlock() throws InterruptedException, BrokenBarrierException {
+      final CyclicBarrier inGetNextSchedule = new CyclicBarrier(2);
+      // This will flakily deadlock, so run it multiple times to increase the flake likelihood
+      for (int i = 0; i < 1000; i++) {
+        Service service = new AbstractScheduledService() {
+          @Override protected void runOneIteration() {}
+          @Override protected Scheduler scheduler() {
+            return new CustomScheduler() {
+              @Override protected Schedule getNextSchedule() throws Exception {
+                if (state() != State.STARTING) {
+                  inGetNextSchedule.await();
+                  Thread.yield();
+                  throw new RuntimeException("boom");
+                }
+                return new Schedule(0, TimeUnit.NANOSECONDS);
+              }
+            };
+          }
+        };
+        service.startAsync().awaitRunning();
+        inGetNextSchedule.await();
+        service.stopAsync();
+      }
     }
 
     public void testBig() throws Exception {

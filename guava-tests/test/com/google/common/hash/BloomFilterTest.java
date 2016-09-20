@@ -18,6 +18,7 @@ package com.google.common.hash;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.hash.BloomFilterStrategies.BitArray;
+import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.math.LongMath;
@@ -25,15 +26,12 @@ import com.google.common.primitives.Ints;
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.testing.SerializableTester;
-
-import junit.framework.TestCase;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.RoundingMode;
 import java.util.Random;
-
 import javax.annotation.Nullable;
+import junit.framework.TestCase;
 
 /**
  * Tests for SimpleGenericBloomFilter and derived BloomFilter views.
@@ -41,6 +39,7 @@ import javax.annotation.Nullable;
  * @author Dimitris Andreou
  */
 public class BloomFilterTest extends TestCase {
+  @AndroidIncompatible // OutOfMemoryError
   public void testLargeBloomFilterDoesntOverflow() {
     long numBits = Integer.MAX_VALUE;
     numBits++;
@@ -188,7 +187,6 @@ public class BloomFilterTest extends TestCase {
     }
   }
 
-  @SuppressWarnings("CheckReturnValue")
   public void testPreconditions() {
     try {
       BloomFilter.create(Funnels.unencodedCharsFunnel(), -1);
@@ -208,7 +206,6 @@ public class BloomFilterTest extends TestCase {
     } catch (IllegalArgumentException expected) {}
   }
 
-  @SuppressWarnings("CheckReturnValue")
   public void testFailureWhenMoreThan255HashFunctionsAreNeeded() {
     try {
       int n = 1000;
@@ -243,7 +240,6 @@ public class BloomFilterTest extends TestCase {
   /**
    * Tests that we always get a non-negative optimal size.
    */
-  @SuppressWarnings("CheckReturnValue")
   public void testOptimalSize() {
     for (int n = 1; n < 1000; n++) {
       for (double fpp = Double.MIN_VALUE; fpp < 1.0; fpp += 0.001) {
@@ -261,18 +257,20 @@ public class BloomFilterTest extends TestCase {
     assertEquals(3327428144502L, BloomFilter.optimalNumOfBits(
         Integer.MAX_VALUE, Double.MIN_VALUE));
     try {
-      BloomFilter.create(HashTestUtils.BAD_FUNNEL, Integer.MAX_VALUE, Double.MIN_VALUE);
+      BloomFilter<String> unused =
+          BloomFilter.create(HashTestUtils.BAD_FUNNEL, Integer.MAX_VALUE, Double.MIN_VALUE);
       fail("we can't represent such a large BF!");
     } catch (IllegalArgumentException expected) {
-      assertEquals("Could not create BloomFilter of 3327428144502 bits", expected.getMessage());
+      assertThat(expected).hasMessage("Could not create BloomFilter of 3327428144502 bits");
     }
   }
 
-  @SuppressWarnings("CheckReturnValue")
+  @AndroidIncompatible // OutOfMemoryError
   public void testLargeNumberOfInsertions() {
     // We use horrible FPPs here to keep Java from OOM'ing
-    BloomFilter.create(Funnels.unencodedCharsFunnel(), 42L + Integer.MAX_VALUE, 0.28);
-    BloomFilter.create(Funnels.unencodedCharsFunnel(), 50L * Integer.MAX_VALUE, 0.99);
+    BloomFilter<String> unused =
+        BloomFilter.create(Funnels.unencodedCharsFunnel(), Integer.MAX_VALUE / 2, 0.28);
+    unused = BloomFilter.create(Funnels.unencodedCharsFunnel(), 45L * Integer.MAX_VALUE, 0.99);
   }
 
   private void checkSanity(BloomFilter<Object> bf) {
@@ -307,6 +305,7 @@ public class BloomFilterTest extends TestCase {
     }
   }
 
+  @AndroidIncompatible // slow
   public void testBitSize() {
     double fpp = 0.03;
     for (int i = 1; i < 10000; i++) {
@@ -473,7 +472,7 @@ public class BloomFilterTest extends TestCase {
    * Only appending a new constant is allowed.
    */
   public void testBloomFilterStrategies() {
-    assertEquals(2, BloomFilterStrategies.values().length);
+    assertThat(BloomFilterStrategies.values()).hasLength(2);
     assertEquals(BloomFilterStrategies.MURMUR128_MITZ_32, BloomFilterStrategies.values()[0]);
     assertEquals(BloomFilterStrategies.MURMUR128_MITZ_64, BloomFilterStrategies.values()[1]);
   }

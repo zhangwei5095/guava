@@ -27,13 +27,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.testing.EqualsTester;
-
-import junit.framework.TestCase;
-
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import junit.framework.TestCase;
 
 /**
  * {@link LoadingCache} tests that deal with empty caches.
@@ -379,7 +377,7 @@ public class EmptyCachesTest extends TestCase {
             DurationSpec.of(1, DAYS)));
   }
 
-  private void warmUp(LoadingCache<Object, Object> cache, int minimum, int maximum) {
+  private static void warmUp(LoadingCache<Object, Object> cache, int minimum, int maximum) {
     for (int i = minimum; i < maximum; i++) {
       cache.getUnchecked(i);
     }

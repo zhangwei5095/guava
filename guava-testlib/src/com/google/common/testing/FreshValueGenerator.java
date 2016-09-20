@@ -17,14 +17,15 @@
 package com.google.common.testing;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Throwables.throwIfUnchecked;
 
+import com.google.common.annotations.GwtIncompatible;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
 import com.google.common.base.Equivalence;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
-import com.google.common.base.Throwables;
 import com.google.common.base.Ticker;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.BiMap;
@@ -70,7 +71,6 @@ import com.google.common.reflect.Invokable;
 import com.google.common.reflect.Parameter;
 import com.google.common.reflect.Reflection;
 import com.google.common.reflect.TypeToken;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -119,7 +119,6 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
-
 import javax.annotation.Nullable;
 
 /**
@@ -127,6 +126,7 @@ import javax.annotation.Nullable;
  *
  * @author Ben Yu
  */
+@GwtIncompatible
 class FreshValueGenerator {
 
   private static final ImmutableMap<Class<?>, Method> GENERATORS;
@@ -141,7 +141,7 @@ class FreshValueGenerator {
     GENERATORS = builder.build();
   }
 
-  private static final ImmutableMap<Class<?>, Method> EMPTY_GENEREATORS;
+  private static final ImmutableMap<Class<?>, Method> EMPTY_GENERATORS;
   static {
     ImmutableMap.Builder<Class<?>, Method> builder =
         ImmutableMap.builder();
@@ -150,7 +150,7 @@ class FreshValueGenerator {
         builder.put(method.getReturnType(), method);
       }
     }
-    EMPTY_GENEREATORS = builder.build();
+    EMPTY_GENERATORS = builder.build();
   }
 
   private final AtomicInteger freshness = new AtomicInteger(1);
@@ -213,7 +213,7 @@ class FreshValueGenerator {
       Array.set(array, 0, generate(componentType));
       return array;
     }
-    Method emptyGenerate = EMPTY_GENEREATORS.get(rawType);
+    Method emptyGenerate = EMPTY_GENERATORS.get(rawType);
     if (emptyGenerate != null) {
       if (emptyInstanceGenerated.containsKey(type.getType())) {
         // empty instance already generated
@@ -270,9 +270,11 @@ class FreshValueGenerator {
     try {
       return generator.invoke(this, args);
     } catch (InvocationTargetException e) {
-      throw Throwables.propagate(e.getCause());
+      throwIfUnchecked(e.getCause());
+      throw new RuntimeException(e.getCause());
     } catch (Exception e) {
-      throw Throwables.propagate(e);
+      throwIfUnchecked(e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -306,9 +308,7 @@ class FreshValueGenerator {
   }
 
   /** Subclasses can override to provide different return value for proxied interface methods. */
-  Object interfaceMethodCalled(
-      @SuppressWarnings("unused") Class<?> interfaceType,
-      @SuppressWarnings("unused") Method method) {
+  Object interfaceMethodCalled(Class<?> interfaceType, Method method) {
     throw new UnsupportedOperationException();
   }
 

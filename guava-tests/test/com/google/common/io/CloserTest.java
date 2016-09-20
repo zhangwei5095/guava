@@ -16,6 +16,8 @@
 
 package com.google.common.io;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
@@ -25,16 +27,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.testing.TestLogHandler;
-
-import junit.framework.TestCase;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.logging.LogRecord;
-
 import javax.annotation.Nullable;
+import junit.framework.TestCase;
 
 /**
  * Tests for {@link Closer}.
@@ -50,15 +49,16 @@ public class CloserTest extends TestCase {
     suppressor = new TestSuppressor();
   }
 
+  @AndroidIncompatible // TODO(cpovirk): Look up Build.VERSION.SDK_INT reflectively.
   public void testCreate() {
     Closer closer = Closer.create();
     String javaVersion = System.getProperty("java.version");
     String secondPart = Iterables.get(Splitter.on('.').split(javaVersion), 1);
     int versionNumber = Integer.parseInt(secondPart);
     if (versionNumber < 7) {
-      assertTrue(closer.suppressor instanceof Closer.LoggingSuppressor);
+      assertThat(closer.suppressor).isInstanceOf(Closer.LoggingSuppressor.class);
     } else {
-      assertTrue(closer.suppressor instanceof Closer.SuppressingSuppressor);
+      assertThat(closer.suppressor).isInstanceOf(Closer.SuppressingSuppressor.class);
     }
   }
 
@@ -125,7 +125,7 @@ public class CloserTest extends TestCase {
         closer.close();
       }
     } catch (Throwable expected) {
-      assertTrue(expected instanceof IOException);
+      assertThat(expected).isInstanceOf(IOException.class);
     }
 
     assertTrue(c1.isClosed());
@@ -339,7 +339,7 @@ public class CloserTest extends TestCase {
       } catch (Throwable e) {
         throw closer.rethrow(thrownException, IOException.class);
       } finally {
-        assertEquals(0, getSuppressed(thrownException).length);
+        assertThat(getSuppressed(thrownException)).isEmpty();
         closer.close();
       }
     } catch (IOException expected) {

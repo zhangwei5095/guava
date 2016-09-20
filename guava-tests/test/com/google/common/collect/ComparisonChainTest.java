@@ -17,7 +17,6 @@
 package com.google.common.collect;
 
 import com.google.common.annotations.GwtCompatible;
-
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
@@ -35,6 +34,15 @@ public class ComparisonChainTest extends TestCase {
     public int compareTo(DontCompareMe o) {
       throw new AssertionFailedError();
     }
+  }
+
+  public void testCompareBooleans() {
+    assertEquals(0, ComparisonChain.start()
+        .compare(true, true)
+        .compare(true, Boolean.TRUE)
+        .compare(Boolean.TRUE, true)
+        .compare(Boolean.TRUE, Boolean.TRUE)
+        .result());
   }
 
   public void testDegenerate() {

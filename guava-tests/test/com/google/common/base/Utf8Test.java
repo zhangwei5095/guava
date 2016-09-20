@@ -16,14 +16,21 @@
 
 package com.google.common.base;
 
+import static com.google.common.truth.Truth.assertThat;
+import static java.lang.Character.MAX_CODE_POINT;
+import static java.lang.Character.MAX_HIGH_SURROGATE;
+import static java.lang.Character.MAX_LOW_SURROGATE;
+import static java.lang.Character.MIN_HIGH_SURROGATE;
+import static java.lang.Character.MIN_LOW_SURROGATE;
+import static java.lang.Character.MIN_SUPPLEMENTARY_CODE_POINT;
+
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
-
-import junit.framework.TestCase;
-
+import com.google.common.collect.ImmutableList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
+import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link Utf8}.
@@ -34,6 +41,25 @@ import java.util.Random;
  */
 @GwtCompatible(emulated = true)
 public class Utf8Test extends TestCase {
+
+  private static final ImmutableList<String> ILL_FORMED_STRINGS;
+  static {
+    ImmutableList.Builder<String> builder = ImmutableList.builder();
+    char[] surrogates = {
+      MAX_LOW_SURROGATE,
+      MAX_HIGH_SURROGATE,
+      MIN_LOW_SURROGATE,
+      MIN_HIGH_SURROGATE,
+    };
+    for (char surrogate : surrogates) {
+      builder.add(newString(surrogate));
+      builder.add(newString(surrogate, 'n'));
+      builder.add(newString('n', surrogate));
+      builder.add(newString(surrogate, surrogate));
+    }
+    builder.add(newString(MIN_LOW_SURROGATE, MAX_HIGH_SURROGATE));
+    ILL_FORMED_STRINGS = builder.build();
+  }
 
   public void testEncodedLength_validStrings() {
     assertEquals(0, Utf8.encodedLength(""));
@@ -46,8 +72,7 @@ public class Utf8Test extends TestCase {
         + "狹斯丕爾。[2]莎士比亞編寫過好多作品，佢嗰劇作響西洋文學好有影響，"
         + "哈都拕人翻譯做好多話。"));
     // A surrogate pair
-    assertEquals(4, Utf8.encodedLength(
-        newString(Character.MIN_HIGH_SURROGATE, Character.MIN_LOW_SURROGATE)));
+    assertEquals(4, Utf8.encodedLength(newString(MIN_HIGH_SURROGATE, MIN_LOW_SURROGATE)));
   }
 
   public void testEncodedLength_validStrings2() {
@@ -57,9 +82,9 @@ public class Utf8Test extends TestCase {
     utf8Lengths.put(0x80, 2);
     utf8Lengths.put(0x7ff, 2);
     utf8Lengths.put(0x800, 3);
-    utf8Lengths.put(Character.MIN_SUPPLEMENTARY_CODE_POINT - 1, 3);
-    utf8Lengths.put(Character.MIN_SUPPLEMENTARY_CODE_POINT, 4);
-    utf8Lengths.put(Character.MAX_CODE_POINT, 4);
+    utf8Lengths.put(MIN_SUPPLEMENTARY_CODE_POINT - 1, 3);
+    utf8Lengths.put(MIN_SUPPLEMENTARY_CODE_POINT, 4);
+    utf8Lengths.put(MAX_CODE_POINT, 4);
 
     Integer[] codePoints = utf8Lengths.keySet().toArray(new Integer[]{});
     StringBuilder sb = new StringBuilder();
@@ -83,25 +108,19 @@ public class Utf8Test extends TestCase {
   }
 
   public void testEncodedLength_invalidStrings() {
-    testEncodedLengthFails(newString(Character.MIN_HIGH_SURROGATE), 0);
-    testEncodedLengthFails("foobar" + newString(Character.MIN_HIGH_SURROGATE), 6);
-    testEncodedLengthFails(newString(Character.MIN_LOW_SURROGATE), 0);
-    testEncodedLengthFails("foobar" + newString(Character.MIN_LOW_SURROGATE), 6);
-    testEncodedLengthFails(
-        newString(
-            Character.MIN_HIGH_SURROGATE,
-            Character.MIN_HIGH_SURROGATE), 0);
+    testEncodedLengthFails(newString(MIN_HIGH_SURROGATE), 0);
+    testEncodedLengthFails("foobar" + newString(MIN_HIGH_SURROGATE), 6);
+    testEncodedLengthFails(newString(MIN_LOW_SURROGATE), 0);
+    testEncodedLengthFails("foobar" + newString(MIN_LOW_SURROGATE), 6);
+    testEncodedLengthFails(newString(MIN_HIGH_SURROGATE, MIN_HIGH_SURROGATE), 0);
   }
 
-  @SuppressWarnings("CheckReturnValue")
-  private static void testEncodedLengthFails(String invalidString,
-      int invalidCodePointIndex) {
+  private static void testEncodedLengthFails(String invalidString, int invalidCodePointIndex) {
     try {
       Utf8.encodedLength(invalidString);
       fail();
     } catch (IllegalArgumentException expected) {
-      assertEquals("Unpaired surrogate at index " + invalidCodePointIndex,
-          expected.getMessage());
+      assertThat(expected).hasMessage("Unpaired surrogate at index " + invalidCodePointIndex);
     }
   }
 
@@ -162,19 +181,20 @@ public class Utf8Test extends TestCase {
       FOUR_BYTE_ROUNDTRIPPABLE_CHARACTERS;
 
   /** Tests that round tripping of all two byte permutations work. */
-  @GwtIncompatible("java.nio.charset.Charset")
+  @GwtIncompatible // java.nio.charset.Charset
   public void testIsWellFormed_1Byte() {
     testBytes(1, EXPECTED_ONE_BYTE_ROUNDTRIPPABLE_COUNT);
   }
 
   /** Tests that round tripping of all two byte permutations work. */
-  @GwtIncompatible("java.nio.charset.Charset")
+  @GwtIncompatible // java.nio.charset.Charset
   public void testIsWellFormed_2Bytes() {
     testBytes(2, EXPECTED_TWO_BYTE_ROUNDTRIPPABLE_COUNT);
   }
 
   /** Tests that round tripping of all three byte permutations work. */
-  @GwtIncompatible("java.nio.charset.Charset")
+  @GwtIncompatible // java.nio.charset.Charset
+
   public void testIsWellFormed_3Bytes() {
     testBytes(3, EXPECTED_THREE_BYTE_ROUNDTRIPPABLE_COUNT);
   }
@@ -226,11 +246,11 @@ public class Utf8Test extends TestCase {
     assertEquals(EXPECTED_FOUR_BYTE_ROUNDTRIPPABLE_COUNT, actual);
   }
 
-  private String newString(char... chars) {
+  private static String newString(char... chars) {
     return new String(chars);
   }
 
-  private byte[] toByteArray(int... bytes) {
+  private static byte[] toByteArray(int... bytes) {
     byte[] realBytes = new byte[bytes.length];
     for (int i = 0; i < bytes.length; i++) {
       realBytes[i] = (byte) bytes[i];
@@ -238,11 +258,11 @@ public class Utf8Test extends TestCase {
     return realBytes;
   }
 
-  private void assertWellFormed(int... bytes) {
+  private static void assertWellFormed(int... bytes) {
     assertTrue(Utf8.isWellFormed(toByteArray(bytes)));
   }
 
-  private void assertNotWellFormed(int... bytes) {
+  private static void assertNotWellFormed(int... bytes) {
     assertFalse(Utf8.isWellFormed(toByteArray(bytes)));
   }
 
@@ -278,7 +298,7 @@ public class Utf8Test extends TestCase {
    * @param numBytes the number of bytes in the byte array
    * @param expectedCount the expected number of roundtrippable permutations
    */
-  @GwtIncompatible("java.nio.charset.Charset")
+  @GwtIncompatible // java.nio.charset.Charset
   private static void testBytes(int numBytes, long expectedCount) {
     testBytes(numBytes, expectedCount, 0, -1);
   }
@@ -294,9 +314,8 @@ public class Utf8Test extends TestCase {
    * @param lim the limit of bytes to process encoded as a long as big-endian,
    *     or -1 to mean the max limit for numBytes
    */
-  @GwtIncompatible("java.nio.charset.Charset")
-  private static void testBytes(int numBytes, long expectedCount, long start,
-      long lim) {
+  @GwtIncompatible // java.nio.charset.Charset
+  private static void testBytes(int numBytes, long expectedCount, long start, long lim) {
     byte[] bytes = new byte[numBytes];
     if (lim == -1) {
       lim = 1L << (numBytes * 8);

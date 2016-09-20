@@ -17,9 +17,7 @@
 package com.google.common.collect;
 
 import com.google.common.annotations.GwtCompatible;
-
 import java.util.NoSuchElementException;
-
 import javax.annotation.Nullable;
 
 /**
@@ -30,7 +28,7 @@ import javax.annotation.Nullable;
  *
  * <p>Example: <pre>   {@code
  *
- *   Iterator<Integer> powersOfTwo = 
+ *   Iterator<Integer> powersOfTwo =
  *       new AbstractSequentialIterator<Integer>(1) {
  *         protected Integer computeNext(Integer previous) {
  *           return (previous == 1 << 30) ? null : previous * 2;
@@ -41,8 +39,7 @@ import javax.annotation.Nullable;
  * @since 12.0 (in Guava as {@code AbstractLinkedIterator} since 8.0)
  */
 @GwtCompatible
-public abstract class AbstractSequentialIterator<T>
-    extends UnmodifiableIterator<T> {
+public abstract class AbstractSequentialIterator<T> extends UnmodifiableIterator<T> {
   private T nextOrNull;
 
   /**

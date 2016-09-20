@@ -19,8 +19,6 @@ package com.google.common.collect;
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.base.Preconditions;
 
-import javax.annotation.Nullable;
-
 /**
  * Implementation of {@link ImmutableList} used for 0 or 2+ elements (not 1).
  *
@@ -51,7 +49,8 @@ class RegularImmutableList<E> extends ImmutableList<E> {
     return size;
   }
 
-  @Override boolean isPartialView() {
+  @Override
+  boolean isPartialView() {
     return size != array.length;
   }
 
@@ -70,35 +69,8 @@ class RegularImmutableList<E> extends ImmutableList<E> {
   }
 
   @Override
-  public int indexOf(@Nullable Object object) {
-    if (object == null) {
-      return -1;
-    }
-    for (int i = 0; i < size; i++) {
-      if (array[offset + i].equals(object)) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  @Override
-  public int lastIndexOf(@Nullable Object object) {
-    if (object == null) {
-      return -1;
-    }
-    for (int i = size - 1; i >= 0; i--) {
-      if (array[offset + i].equals(object)) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  @Override
   ImmutableList<E> subListUnchecked(int fromIndex, int toIndex) {
-    return new RegularImmutableList<E>(
-        array, offset + fromIndex, toIndex - fromIndex);
+    return new RegularImmutableList<E>(array, offset + fromIndex, toIndex - fromIndex);
   }
 
   @SuppressWarnings("unchecked")
@@ -106,9 +78,8 @@ class RegularImmutableList<E> extends ImmutableList<E> {
   public UnmodifiableListIterator<E> listIterator(int index) {
     // for performance
     // The fake cast to E is safe because the creation methods only allow E's
-    return (UnmodifiableListIterator<E>)
-        Iterators.forArray(array, offset, size, index);
+    return (UnmodifiableListIterator<E>) Iterators.forArray(array, offset, size, index);
   }
 
-  // TODO(user): benchmark optimizations for equals() and see if they're worthwhile
+  // TODO(lowasser): benchmark optimizations for equals() and see if they're worthwhile
 }

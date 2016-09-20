@@ -24,9 +24,6 @@ import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.testing.NullPointerTester.Visibility;
 import com.google.common.testing.SerializableTester;
-
-import junit.framework.TestCase;
-
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.ParameterizedType;
@@ -37,14 +34,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import junit.framework.TestCase;
 
 /**
  * Tests for {@link Types}.
  *
  * @author Ben Yu
  */
+@AndroidIncompatible // lots of failures, possibly some related to bad equals() implementations?
 public class TypesTest extends TestCase {
-
   public void testNewParameterizedType_ownerTypeImplied() throws Exception {
     ParameterizedType jvmType = (ParameterizedType)
         new TypeCapture<Map.Entry<String, Integer>>() {}.capture();

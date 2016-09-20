@@ -19,24 +19,25 @@ package com.google.common.collect.testing;
 import static com.google.common.collect.testing.Helpers.castOrCopyToList;
 import static java.util.Collections.reverse;
 
+import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.testing.DerivedCollectionGenerators.Bound;
+import com.google.common.collect.testing.DerivedCollectionGenerators.ForwardingTestMapGenerator;
 import com.google.common.collect.testing.DerivedCollectionGenerators.SortedMapSubmapTestMapGenerator;
 import com.google.common.collect.testing.features.Feature;
 import com.google.common.collect.testing.testers.NavigableMapNavigationTester;
-
-import junit.framework.TestSuite;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.SortedMap;
+import junit.framework.TestSuite;
 
 /**
  * Creates, based on your criteria, a JUnit test suite that exhaustively tests
  * a NavigableMap implementation.
  */
+@GwtIncompatible
 public class NavigableMapTestSuiteBuilder<K, V> extends SortedMapTestSuiteBuilder<K, V> {
   public static <K, V> NavigableMapTestSuiteBuilder<K, V> using(
       TestSortedMapGenerator<K, V> generator) {
@@ -45,15 +46,18 @@ public class NavigableMapTestSuiteBuilder<K, V> extends SortedMapTestSuiteBuilde
     return result;
   }
 
-  @Override protected List<Class<? extends AbstractTester>> getTesters() {
+  @Override
+  protected List<Class<? extends AbstractTester>> getTesters() {
     List<Class<? extends AbstractTester>> testers = Helpers.copyToList(super.getTesters());
     testers.add(NavigableMapNavigationTester.class);
     return testers;
   }
 
   @Override
-  protected List<TestSuite> createDerivedSuites(FeatureSpecificTestSuiteBuilder<?,
-      ? extends OneSizeTestContainerGenerator<Map<K, V>, Entry<K, V>>> parentBuilder) {
+  protected List<TestSuite> createDerivedSuites(
+      FeatureSpecificTestSuiteBuilder<
+              ?, ? extends OneSizeTestContainerGenerator<Map<K, V>, Entry<K, V>>>
+          parentBuilder) {
     List<TestSuite> derivedSuites = super.createDerivedSuites(parentBuilder);
 
     if (!parentBuilder.getFeatures().contains(NoRecurse.DESCENDING)) {
@@ -72,7 +76,8 @@ public class NavigableMapTestSuiteBuilder<K, V> extends SortedMapTestSuiteBuilde
     return derivedSuites;
   }
 
-  @Override protected NavigableSetTestSuiteBuilder<K> createDerivedKeySetSuite(
+  @Override
+  protected NavigableSetTestSuiteBuilder<K> createDerivedKeySetSuite(
       TestSetGenerator<K> keySetGenerator) {
     return NavigableSetTestSuiteBuilder.using((TestSortedSetGenerator<K>) keySetGenerator);
   }
@@ -84,8 +89,8 @@ public class NavigableMapTestSuiteBuilder<K, V> extends SortedMapTestSuiteBuilde
       super(delegate, to, from);
     }
 
-    @Override NavigableMap<K, V> createSubMap(SortedMap<K, V> sortedMap, K firstExclusive,
-        K lastExclusive) {
+    @Override
+    NavigableMap<K, V> createSubMap(SortedMap<K, V> sortedMap, K firstExclusive, K lastExclusive) {
       NavigableMap<K, V> map = (NavigableMap<K, V>) sortedMap;
       if (from == Bound.NO_BOUND && to == Bound.INCLUSIVE) {
         return map.headMap(lastInclusive, true);
@@ -106,76 +111,75 @@ public class NavigableMapTestSuiteBuilder<K, V> extends SortedMapTestSuiteBuilde
   @Override
   public NavigableMapTestSuiteBuilder<K, V> newBuilderUsing(
       TestSortedMapGenerator<K, V> delegate, Bound to, Bound from) {
-    return using(new NavigableMapSubmapTestMapGenerator<K, V>(delegate, to, from));
+    return subSuiteUsing(new NavigableMapSubmapTestMapGenerator<K, V>(delegate, to, from));
   }
 
   /**
    * Create a suite whose maps are descending views of other maps.
    */
-  private TestSuite createDescendingSuite(final FeatureSpecificTestSuiteBuilder<?,
-          ? extends OneSizeTestContainerGenerator<Map<K, V>, Entry<K, V>>> parentBuilder) {
-    final TestMapGenerator<K, V> delegate
-        = (TestMapGenerator<K, V>) parentBuilder.getSubjectGenerator().getInnerGenerator();
+  private TestSuite createDescendingSuite(
+      final FeatureSpecificTestSuiteBuilder<
+              ?, ? extends OneSizeTestContainerGenerator<Map<K, V>, Entry<K, V>>>
+          parentBuilder) {
+    final TestSortedMapGenerator<K, V> delegate =
+        (TestSortedMapGenerator<K, V>) parentBuilder.getSubjectGenerator().getInnerGenerator();
 
     List<Feature<?>> features = new ArrayList<Feature<?>>();
     features.add(NoRecurse.DESCENDING);
     features.addAll(parentBuilder.getFeatures());
 
-    return NavigableMapTestSuiteBuilder
-        .using(new ForwardingTestMapGenerator<K, V>(delegate) {
-          @Override public Map<K, V> create(Object... entries) {
-            NavigableMap<K, V> map = (NavigableMap<K, V>) delegate.create(entries);
-            return map.descendingMap();
-          }
-
-          @Override
-          public Iterable<Entry<K, V>> order(List<Entry<K, V>> insertionOrder) {
-            insertionOrder = castOrCopyToList(delegate.order(insertionOrder));
-            reverse(insertionOrder);
-            return insertionOrder;
-          }
-        })
+    return subSuiteUsing(new DescendingTestMapGenerator<K, V>(delegate))
         .named(parentBuilder.getName() + " descending")
         .withFeatures(features)
         .suppressing(parentBuilder.getSuppressedTests())
         .createTestSuite();
   }
 
-  static class ForwardingTestMapGenerator<K, V> implements TestMapGenerator<K, V> {
-    private TestMapGenerator<K, V> delegate;
+  NavigableMapTestSuiteBuilder<K, V> subSuiteUsing(TestSortedMapGenerator<K, V> generator) {
+    return using(generator);
+  }
 
-    ForwardingTestMapGenerator(TestMapGenerator<K, V> delegate) {
-      this.delegate = delegate;
+  static class DescendingTestMapGenerator<K, V> extends ForwardingTestMapGenerator<K, V>
+      implements TestSortedMapGenerator<K, V> {
+    DescendingTestMapGenerator(TestSortedMapGenerator<K, V> delegate) {
+      super(delegate);
+    }
+
+    @Override
+    public NavigableMap<K, V> create(Object... entries) {
+      NavigableMap<K, V> map = (NavigableMap<K, V>) delegate.create(entries);
+      return map.descendingMap();
     }
 
     @Override
     public Iterable<Entry<K, V>> order(List<Entry<K, V>> insertionOrder) {
-      return delegate.order(insertionOrder);
+      insertionOrder = castOrCopyToList(delegate.order(insertionOrder));
+      reverse(insertionOrder);
+      return insertionOrder;
+    }
+
+    TestSortedMapGenerator<K, V> delegate() {
+      return (TestSortedMapGenerator<K, V>) delegate;
     }
 
     @Override
-    public K[] createKeyArray(int length) {
-      return delegate.createKeyArray(length);
+    public Entry<K, V> belowSamplesLesser() {
+      return delegate().aboveSamplesGreater();
     }
 
     @Override
-    public V[] createValueArray(int length) {
-      return delegate.createValueArray(length);
+    public Entry<K, V> belowSamplesGreater() {
+      return delegate().aboveSamplesLesser();
     }
 
     @Override
-    public SampleElements<Entry<K, V>> samples() {
-      return delegate.samples();
+    public Entry<K, V> aboveSamplesLesser() {
+      return delegate().belowSamplesGreater();
     }
 
     @Override
-    public Map<K, V> create(Object... elements) {
-      return delegate.create(elements);
-    }
-
-    @Override
-    public Entry<K, V>[] createArray(int length) {
-      return delegate.createArray(length);
+    public Entry<K, V> aboveSamplesGreater() {
+      return delegate().belowSamplesLesser();
     }
   }
 }

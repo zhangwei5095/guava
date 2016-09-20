@@ -21,15 +21,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-
-import junit.framework.TestCase;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
+import junit.framework.TestCase;
 
 /**
  * @param <S> the source or sink type
@@ -37,6 +35,7 @@ import java.util.List;
  * @param <F> the factory type
  * @author Colin Decker
  */
+@AndroidIncompatible // Android doesn't understand tests that lack default constructors.
 public class SourceSinkTester<S, T, F extends SourceSinkFactory<S, T>> extends TestCase {
 
   static final String LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing "

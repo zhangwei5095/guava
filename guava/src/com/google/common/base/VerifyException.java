@@ -16,12 +16,11 @@ package com.google.common.base;
 
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.GwtCompatible;
-
 import javax.annotation.Nullable;
 
 /**
  * Exception thrown upon the failure of a
- * <a href="http://code.google.com/p/guava-libraries/wiki/ConditionalFailuresExplained">verification
+ * <a href="https://github.com/google/guava/wiki/ConditionalFailuresExplained">verification
  * check</a>, including those performed by the convenience methods of the {@link Verify} class.
  *
  * @since 17.0

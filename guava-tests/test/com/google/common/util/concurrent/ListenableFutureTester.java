@@ -17,6 +17,7 @@
 package com.google.common.util.concurrent;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.truth.Truth.assertThat;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
@@ -28,7 +29,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
 import javax.annotation.Nullable;
 
 /**
@@ -104,7 +104,7 @@ public class ListenableFutureTester {
       future.get();
       fail("Future should rethrow the exception.");
     } catch (ExecutionException e) {
-      assertEquals(message, e.getCause().getMessage());
+      assertThat(e.getCause()).hasMessage(message);
     }
   }
 }

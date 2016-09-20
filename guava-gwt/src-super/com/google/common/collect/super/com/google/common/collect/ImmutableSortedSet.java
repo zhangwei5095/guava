@@ -27,16 +27,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
 import javax.annotation.Nullable;
 
 /**
- * GWT emulation of {@link ImmutableSortedSet}.
+ * GWT emulation of {@link com.google.common.collect.ImmutableSortedSet}.
  *
  * @author Hayward Chan
  */
-public abstract class ImmutableSortedSet<E>
-    extends ForwardingImmutableSet<E> implements SortedSet<E>, SortedIterable<E> {
+public abstract class ImmutableSortedSet<E> extends ForwardingImmutableSet<E>
+    implements SortedSet<E>, SortedIterable<E> {
   // TODO(cpovirk): split into ImmutableSortedSet/ForwardingImmutableSortedSet?
 
   // In the non-emulated source, this is in ImmutableSortedSetFauxverideShim,
@@ -55,25 +54,21 @@ public abstract class ImmutableSortedSet<E>
 
   @SuppressWarnings("unchecked")
   private static final ImmutableSortedSet<Object> NATURAL_EMPTY_SET =
-      new EmptyImmutableSortedSet<Object>(NATURAL_ORDER);
-
-  @SuppressWarnings("unchecked")
-  private static <E> ImmutableSortedSet<E> emptySet() {
-    return (ImmutableSortedSet<E>) NATURAL_EMPTY_SET;
-  }
+      new RegularImmutableSortedSet<Object>(new TreeSet<Object>(NATURAL_ORDER), false);
 
   static <E> ImmutableSortedSet<E> emptySet(
       Comparator<? super E> comparator) {
     checkNotNull(comparator);
     if (NATURAL_ORDER.equals(comparator)) {
-      return emptySet();
+      return of();
     } else {
-      return new EmptyImmutableSortedSet<E>(comparator);
+      return new RegularImmutableSortedSet<E>(new TreeSet<E>(comparator), false);
     }
   }
 
+  @SuppressWarnings("unchecked")
   public static <E> ImmutableSortedSet<E> of() {
-    return emptySet();
+    return (ImmutableSortedSet<E>) NATURAL_EMPTY_SET;
   }
 
   public static <E extends Comparable<? super E>> ImmutableSortedSet<E> of(

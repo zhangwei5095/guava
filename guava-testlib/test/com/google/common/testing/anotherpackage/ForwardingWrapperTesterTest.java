@@ -28,13 +28,12 @@ import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.testing.ForwardingWrapperTester;
 import com.google.common.testing.NullPointerTester;
-
-import junit.framework.TestCase;
-
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import junit.framework.AssertionFailedError;
+import junit.framework.TestCase;
 
 /**
  * Tests for {@link ForwardingWrapperTester}. Live in a different package to detect reflection
@@ -220,7 +219,7 @@ public class ForwardingWrapperTesterTest extends TestCase {
       String... expectedMessages) {
     try {
       tester.testForwarding(interfaceType, wrapperFunction);
-    } catch (AssertionError expected) {
+    } catch (AssertionFailedError expected) {
       for (String message : expectedMessages) {
         assertThat(expected.getMessage()).contains(message);
       }
@@ -335,11 +334,11 @@ public class ForwardingWrapperTesterTest extends TestCase {
     }
 
     @Override public int minus(int a, int b) { // bad!
-      return arithmetic.add(b, a);
+      return arithmetic.add(a, b);
     }
 
     @Override public int add(int a, int b) {
-      return arithmetic.add(b, a);
+      return arithmetic.add(a, b);
     }
 
     @Override public String toString() {
@@ -349,7 +348,7 @@ public class ForwardingWrapperTesterTest extends TestCase {
 
   private interface ParameterTypesDifferent {
     void foo(String s, Runnable r, Number n, Iterable<?> it, boolean b, Equivalence<String> eq,
-        Exception e, InputStream in, Comparable<?> c, Ordering<Integer> ord, 
+        Exception e, InputStream in, Comparable<?> c, Ordering<Integer> ord,
         Charset charset, TimeUnit unit, Class<?> cls, Joiner joiner,
         Pattern pattern, UnsignedInteger ui, UnsignedLong ul, StringBuilder sb,
         Predicate<?> pred, Function<?, ?> func, Object obj);
@@ -364,7 +363,7 @@ public class ForwardingWrapperTesterTest extends TestCase {
 
     @Override public void foo(
         String s, Runnable r, Number n, Iterable<?> it, boolean b, Equivalence<String> eq,
-        Exception e, InputStream in, Comparable<?> c, Ordering<Integer> ord, 
+        Exception e, InputStream in, Comparable<?> c, Ordering<Integer> ord,
         Charset charset, TimeUnit unit, Class<?> cls, Joiner joiner,
         Pattern pattern, UnsignedInteger ui, UnsignedLong ul, StringBuilder sb,
         Predicate<?> pred, Function<?, ?> func, Object obj) {
@@ -445,7 +444,7 @@ public class ForwardingWrapperTesterTest extends TestCase {
       new ForwardingWrapperTester()
           .includingEquals()
           .testForwarding(Equals.class, NoDelegateToEquals.WRAPPER);
-    } catch (AssertionError expected) {
+    } catch (AssertionFailedError expected) {
       return;
     }
     fail("Should have failed");

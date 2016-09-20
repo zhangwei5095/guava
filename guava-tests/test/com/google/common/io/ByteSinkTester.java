@@ -22,14 +22,12 @@ import static org.junit.Assert.assertArrayEquals;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
-
-import junit.framework.TestSuite;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.Map;
+import junit.framework.TestSuite;
 
 /**
  * A generator of {@code TestSuite} instances for testing {@code ByteSink} implementations.
@@ -38,6 +36,7 @@ import java.util.Map;
  *
  * @author Colin Decker
  */
+@AndroidIncompatible // Android doesn't understand tests that lack default constructors.
 public class ByteSinkTester extends SourceSinkTester<ByteSink, byte[], ByteSinkFactory> {
 
   private static final ImmutableList<Method> testMethods

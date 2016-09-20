@@ -18,13 +18,11 @@ import com.google.common.annotations.GwtCompatible;
 import com.google.common.annotations.GwtIncompatible;
 import com.google.common.collect.testing.Helpers;
 import com.google.common.testing.NullPointerTester;
-
-import junit.framework.TestCase;
-
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import junit.framework.TestCase;
 
 /**
  * Tests for UnsignedInts
@@ -65,7 +63,6 @@ public class UnsignedIntsTest extends TestCase {
     }
   }
 
-  @SuppressWarnings("CheckReturnValue")
   public void testMax_noArgs() {
     try {
       UnsignedInts.max();
@@ -83,7 +80,6 @@ public class UnsignedIntsTest extends TestCase {
         (int) 0xff1a618bL, (int) 0L));
   }
 
-  @SuppressWarnings("CheckReturnValue")
   public void testMin_noArgs() {
     try {
       UnsignedInts.min();
@@ -91,7 +87,7 @@ public class UnsignedIntsTest extends TestCase {
     } catch (IllegalArgumentException expected) {
     }
   }
-  
+
   public void testMin() {
     assertEquals(LEAST, UnsignedInts.min(LEAST));
     assertEquals(GREATEST, UnsignedInts.min(GREATEST));
@@ -100,7 +96,7 @@ public class UnsignedIntsTest extends TestCase {
         (int) 0x12345678L, (int) 0x5a4316b8L,
         (int) 0xff1a618bL, (int) 0L));
   }
-  
+
   public void testLexicographicalComparator() {
     List<int[]> ordered = Arrays.asList(
         new int[] {},
@@ -144,7 +140,7 @@ public class UnsignedIntsTest extends TestCase {
     }
   }
 
-  @GwtIncompatible("Too slow in GWT (~3min fully optimized)")
+  @GwtIncompatible // Too slow in GWT (~3min fully optimized)
   public void testDivideRemainderEuclideanProperty() {
     // Use a seed so that the test is deterministic:
     Random r = new Random(0L);
@@ -164,7 +160,6 @@ public class UnsignedIntsTest extends TestCase {
     }
   }
 
-  @SuppressWarnings("CheckReturnValue")
   public void testParseIntFail() {
     try {
       UnsignedInts.parseUnsignedInt(Long.toString(1L << 32));
@@ -180,7 +175,6 @@ public class UnsignedIntsTest extends TestCase {
     }
   }
 
-  @SuppressWarnings("CheckReturnValue")
   public void testParseIntWithRadixLimits() {
     // loops through all legal radix values.
     for (int radix = Character.MIN_RADIX; radix <= Character.MAX_RADIX; radix++) {
@@ -198,7 +192,6 @@ public class UnsignedIntsTest extends TestCase {
     }
   }
 
-  @SuppressWarnings("CheckReturnValue")
   public void testParseIntThrowsExceptionForInvalidRadix() {
     // Valid radix values are Character.MIN_RADIX to Character.MAX_RADIX,
     // inclusive.
@@ -229,7 +222,6 @@ public class UnsignedIntsTest extends TestCase {
     assertEquals(0, UnsignedInts.decode("0"));
   }
 
-  @SuppressWarnings("CheckReturnValue")
   public void testDecodeIntFails() {
     try {
       // One more than maximum value
@@ -279,7 +271,7 @@ public class UnsignedIntsTest extends TestCase {
     return UnsignedInts.join(",", values);
   }
 
-  @GwtIncompatible("NullPointerTester")
+  @GwtIncompatible // NullPointerTester
   public void testNulls() {
     new NullPointerTester().testAllPublicStaticMethods(UnsignedInts.class);
   }

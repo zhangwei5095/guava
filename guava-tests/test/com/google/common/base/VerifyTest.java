@@ -16,9 +16,9 @@ package com.google.common.base;
 
 import static com.google.common.base.Verify.verify;
 import static com.google.common.base.Verify.verifyNotNull;
+import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.annotations.GwtCompatible;
-
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
@@ -48,7 +48,7 @@ public class VerifyTest extends TestCase {
       verify(false, "message");
       fail();
     } catch (VerifyException expected) {
-      assertEquals("message", expected.getMessage());
+      assertThat(expected).hasMessage("message");
     }
   }
 
@@ -103,6 +103,6 @@ public class VerifyTest extends TestCase {
   private static final String FORMAT = "I ate %s pies.";
 
   private static void checkMessage(Exception e) {
-    assertEquals("I ate 5 pies.", e.getMessage());
+    assertThat(e).hasMessage("I ate 5 pies.");
   }
 }

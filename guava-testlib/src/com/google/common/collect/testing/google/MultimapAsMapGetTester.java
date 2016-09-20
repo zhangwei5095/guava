@@ -16,20 +16,20 @@
 
 package com.google.common.collect.testing.google;
 
+import static com.google.common.collect.testing.Helpers.assertContentsAnyOrder;
+import static com.google.common.collect.testing.Helpers.assertEmpty;
 import static com.google.common.collect.testing.features.CollectionSize.SEVERAL;
 import static com.google.common.collect.testing.features.CollectionSize.ZERO;
 import static com.google.common.collect.testing.features.MapFeature.ALLOWS_NULL_VALUES;
 import static com.google.common.collect.testing.features.MapFeature.ALLOWS_NULL_VALUE_QUERIES;
 import static com.google.common.collect.testing.features.MapFeature.SUPPORTS_PUT;
 import static com.google.common.collect.testing.features.MapFeature.SUPPORTS_REMOVE;
-import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.testing.Helpers;
 import com.google.common.collect.testing.features.CollectionSize;
 import com.google.common.collect.testing.features.MapFeature;
-
 import java.util.Collection;
 
 /**
@@ -39,20 +39,18 @@ import java.util.Collection;
  */
 @GwtCompatible
 public class MultimapAsMapGetTester<K, V> extends AbstractMultimapTester<K, V, Multimap<K, V>> {
-  
+
   @CollectionSize.Require(SEVERAL)
   @MapFeature.Require(SUPPORTS_REMOVE)
   public void testPropagatesRemoveToMultimap() {
     resetContainer(
-        Helpers.mapEntry(k0(), v0()),
-        Helpers.mapEntry(k0(), v3()),
-        Helpers.mapEntry(k0(), v2()));
+        Helpers.mapEntry(k0(), v0()), Helpers.mapEntry(k0(), v3()), Helpers.mapEntry(k0(), v2()));
     Collection<V> result = multimap().asMap().get(k0());
     assertTrue(result.remove(v0()));
     assertFalse(multimap().containsEntry(k0(), v0()));
     assertEquals(2, multimap().size());
   }
-  
+
   @CollectionSize.Require(absent = ZERO)
   @MapFeature.Require(SUPPORTS_REMOVE)
   public void testPropagatesRemoveLastElementToMultimap() {
@@ -67,9 +65,9 @@ public class MultimapAsMapGetTester<K, V> extends AbstractMultimapTester<K, V, M
     Collection<V> result = multimap().asMap().get(k0());
     result.clear();
     assertGet(k0());
-    assertThat(result).isEmpty();
+    assertEmpty(result);
   }
-  
+
   @CollectionSize.Require(absent = ZERO)
   @MapFeature.Require({SUPPORTS_PUT, ALLOWS_NULL_VALUES})
   public void testAddNullValue() {
@@ -77,14 +75,14 @@ public class MultimapAsMapGetTester<K, V> extends AbstractMultimapTester<K, V, M
     assertTrue(result.add(null));
     assertTrue(multimap().containsEntry(k0(), null));
   }
-  
+
   @CollectionSize.Require(absent = ZERO)
   @MapFeature.Require({SUPPORTS_REMOVE, ALLOWS_NULL_VALUE_QUERIES})
   public void testRemoveNullValue() {
     Collection<V> result = multimap().asMap().get(k0());
     assertFalse(result.remove(null));
   }
-  
+
   @CollectionSize.Require(absent = ZERO)
   @MapFeature.Require(value = SUPPORTS_PUT, absent = ALLOWS_NULL_VALUES)
   public void testAddNullValueUnsupported() {
@@ -92,7 +90,8 @@ public class MultimapAsMapGetTester<K, V> extends AbstractMultimapTester<K, V, M
     try {
       result.add(null);
       fail("Expected NullPointerException");
-    } catch (NullPointerException expected) {}
+    } catch (NullPointerException expected) {
+    }
   }
 
   @CollectionSize.Require(absent = ZERO)
@@ -100,12 +99,11 @@ public class MultimapAsMapGetTester<K, V> extends AbstractMultimapTester<K, V, M
   public void testPropagatesAddToMultimap() {
     Collection<V> result = multimap().asMap().get(k0());
     result.add(v3());
-    assertThat(multimap().get(k0()))
-        .containsExactly(v0(), v3());
+    assertContentsAnyOrder(multimap().get(k0()), v0(), v3());
   }
 
   @CollectionSize.Require(absent = ZERO)
-  @MapFeature.Require({ SUPPORTS_REMOVE, SUPPORTS_PUT })
+  @MapFeature.Require({SUPPORTS_REMOVE, SUPPORTS_PUT})
   public void testPropagatesRemoveThenAddToMultimap() {
     int oldSize = getNumElements();
 
@@ -114,24 +112,24 @@ public class MultimapAsMapGetTester<K, V> extends AbstractMultimapTester<K, V, M
 
     assertFalse(multimap().containsKey(k0()));
     assertFalse(multimap().containsEntry(k0(), v0()));
-    assertThat(result).isEmpty();
+    assertEmpty(result);
 
     assertTrue(result.add(v1()));
     assertTrue(result.add(v2()));
 
-    assertThat(result).containsExactly(v1(), v2());
-    assertThat(multimap().get(k0())).containsExactly(v1(), v2());
+    assertContentsAnyOrder(result, v1(), v2());
+    assertContentsAnyOrder(multimap().get(k0()), v1(), v2());
     assertTrue(multimap().containsKey(k0()));
     assertFalse(multimap().containsEntry(k0(), v0()));
     assertTrue(multimap().containsEntry(k0(), v2()));
     assertEquals(oldSize + 1, multimap().size());
   }
-  
+
   @CollectionSize.Require(absent = ZERO)
   @MapFeature.Require(SUPPORTS_REMOVE)
   public void testReflectsMultimapRemove() {
     Collection<V> result = multimap().asMap().get(k0());
     multimap().removeAll(k0());
-    assertThat(result).isEmpty();
+    assertEmpty(result);
   }
 }

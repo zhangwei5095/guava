@@ -16,13 +16,13 @@
 
 package com.google.common.io;
 
+import static com.google.common.io.SourceSinkFactory.ByteSourceFactory;
 import static com.google.common.io.SourceSinkFactory.CharSourceFactory;
 
+import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-
-import junit.framework.TestSuite;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -30,6 +30,7 @@ import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import junit.framework.TestSuite;
 
 /**
  * A generator of {@code TestSuite} instances for testing {@code CharSource} implementations.
@@ -38,16 +39,32 @@ import java.util.Map;
  *
  * @author Colin Decker
  */
+@AndroidIncompatible // Android doesn't understand tests that lack default constructors.
 public class CharSourceTester extends SourceSinkTester<CharSource, String, CharSourceFactory> {
 
   private static final ImmutableList<Method> testMethods
       = getTestMethods(CharSourceTester.class);
 
-  static TestSuite tests(String name, CharSourceFactory factory) {
+  static TestSuite tests(String name, CharSourceFactory factory, boolean testAsByteSource) {
     TestSuite suite = new TestSuite(name);
     for (Map.Entry<String, String> entry : TEST_STRINGS.entrySet()) {
-      suite.addTest(suiteForString(factory, entry.getValue(), name, entry.getKey()));
+      if (testAsByteSource) {
+        suite.addTest(suiteForBytes(factory,
+            entry.getValue().getBytes(Charsets.UTF_8), name, entry.getKey(), true));
+      } else {
+        suite.addTest(suiteForString(factory, entry.getValue(), name, entry.getKey()));
+      }
     }
+    return suite;
+  }
+
+  static TestSuite suiteForBytes(CharSourceFactory factory, byte[] bytes,
+      String name, String desc, boolean slice) {
+    TestSuite suite = suiteForString(
+        factory, new String(bytes, Charsets.UTF_8), name, desc);
+    ByteSourceFactory byteSourceFactory = SourceSinkFactories.asByteSourceFactory(factory);
+    suite.addTest(ByteSourceTester.suiteForBytes(byteSourceFactory, bytes,
+        name + ".asByteSource[Charset]", desc, slice));
     return suite;
   }
 
@@ -140,6 +157,17 @@ public class CharSourceTester extends SourceSinkTester<CharSource, String, CharS
 
   public void testIsEmpty() throws IOException {
     assertEquals(expected.isEmpty(), source.isEmpty());
+  }
+
+  public void testLength() throws IOException {
+    assertEquals(expected.length(), source.length());
+  }
+
+  public void testLengthIfKnown() throws IOException {
+    Optional<Long> lengthIfKnown = source.lengthIfKnown();
+    if (lengthIfKnown.isPresent()) {
+      assertEquals(expected.length(), (long) lengthIfKnown.get());
+    }
   }
 
   public void testReadLines_withProcessor() throws IOException {
